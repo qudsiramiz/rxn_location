@@ -93,6 +93,6 @@ fixing that issue.
 All the data used to generate the figures in the paper are available in the ```data/study_data```
 directory.
 
-
 # Contact
-If you have any questions, please contact [Ramiz A. Qudsi](https://www.qudsiramiz.space/) at qudsiramiz@gmail.com
+If you have any questions, please contact [Ramiz A. Qudsi](https://www.qudsiramiz.space/) at
+qudsiramiz@gmail.com

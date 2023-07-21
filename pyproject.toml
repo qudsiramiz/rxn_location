@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "rxn_location"
+version = "0.1.0"
+description = "Statistical comparison between X-line location predicted by various models for dayside terrestrial magnetopause"
+authors = ["Ramiz Qudsi <qudsiramiz@gmail.com>"]
+license = "GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"
+
+[tool.poetry.dependencies]
+python = ">=3.10, <3.11"
+spacepy = "^0.4.1"
+pyspedas = "^1.4.40"
+tabulate = "^0.9.0"
+trjtrypy = "^0.0.0"
+joblib = "^1.3.1"
+ipython = "^8.14.0"
+h5py = "^3.9.0"
+scikit-image = "^0.21.0"
+more-itertools = "^9.1.0"
+seaborn = "0.12.1"
+matplotlib = "3.5.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

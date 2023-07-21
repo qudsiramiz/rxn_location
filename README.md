@@ -10,16 +10,74 @@ Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland.
 The code is written in Python 3.10 and has the following dependencies:
 
 ```
-python = ">=3.8, <3.11"
-pyspedas = "^1.3.7"
-tabulate = "^0.8.9"
-trjtrypy = "^0.0.0"
-joblib = "^1.2.0"
-ipython = "8.6.0"
-h5py = "^3.7.0"
+[tool.poetry.dependencies]
+python = ">=3.10, <3.11"
 spacepy = "^0.4.1"
-scikit-image = "^0.19.3"
-more-itertools = "^9.0.0"
-seaborn = "^0.12.1"
-matplotlib = "3.5.1"
+pyspedas = "^1.4.40"
+tabulate = "^0.9.0"
+trjtrypy = "^0.0.0"
+joblib = "^1.3.1"
+ipython = "^8.14.0"
+h5py = "^3.9.0"
+scikit-image = "^0.21.0"
+more-itertools = "^9.1.0"
+seaborn = "0.12.1"
+matplotlib = "3.5.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 ```
+### Running the code
+The code can be run using python or ipython. Since the code has a lot of dependencies, it is
+recommended to use a virtual environment.
+Since the package uses SpacePy and PySPEDAS, installation of which can be a bit tricky becasue of
+internal dependencies, we strongly recommend using Poetry to install the dependencies and run the
+code.
+
+Poetry can be installed using pip:
+```
+pip install poetry
+```
+Once Poetry is installed, the dependencies can be installed using:
+```
+poetry install
+```
+This assumes that the code has been cloned to the local machine and that ```poetry.lock``` and
+```pyproject.toml``` are present in the root directory of the repository.
+
+Once the dependencies are installed, start the virtual environment using:
+```
+poetry shell
+```
+
+In order to check for jet location in MMS data, use the following command:
+```
+python -m jet_reversal_check.py
+```
+
+NOTE: Some times, for whatever reason, the MMS data is not downloaded properly by PySPEDAS. In that
+case, please run the following command:
+```
+python -m spd_brst_test.py
+```
+
+This will create two figures in the ```figures``` directory. One figure is from FPI data and another
+frpm FGM data. If those two figures are created properly, that means the MMS data is downloaded and
+you should be able to run the ```jet_reversal_check.py``` code.
+
+Please refer to the code documentation for more details on the code.
+
+Next step would be to produce the reconnection line location figures. This can be done using the 
+following code/command:
+```
+python -m rx_code.py
+```
+
+In order to compute the statistics from the figures, use the following code/command:
+```
+python -m rc_stats.py
+```
+

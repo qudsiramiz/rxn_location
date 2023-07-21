@@ -81,3 +81,18 @@ In order to compute the statistics from the figures, use the following code/comm
 python -m rc_stats.py
 ```
 
+Other figures are plotted using Seaborn package and is slightly more involved. You can use the
+following command to generate the figures:
+```
+python -m seaborn_plots.py
+```
+However, sometimes, that gives error depending on some other conditions. Currently we are working on
+fixing that issue.
+
+## Data
+All the data used to generate the figures in the paper are available in the ```data/study_data```
+directory.
+
+
+# Contact
+If you have any questions, please contact Ramiz A. Qudsi at qudsiramiz@gmail.com

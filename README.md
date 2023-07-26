@@ -1,5 +1,18 @@
-# rxn_location
-Statistical comparison between X-line location predicted by various models for dayside terrestrial magnetopause
+# Reconnection line location
+
+## Introduction
+Statistical comparison between X-line location predicted by various models for dayside terrestrial
+magnetopause. The models used are:
+1. [Maximum Shear Model](https://doi.org/10.1029/2007JA012270)
+2. [ Maximum Reconnection Energy](https://doi.org/10.1063/1.4811467)
+3. [Maximum Exhaust Velocity](https://doi.org/10.1063/1.2795630)
+4. [Maximum Bisection Field](https://doi.org/10.1029/2002JA009381)
+
+The MMS data used in this study is from [MMS](https://lasp.colorado.edu/mms/sdc/public/) mission.
+The OMNI data is from [OMNIWeb](https://omniweb.gsfc.nasa.gov/).
+
+The repository is archived using Zenodo with the following DOI:
+[![DOI](https://zenodo.org/badge/669151405.svg)](https://zenodo.org/badge/latestdoi/669151405)
 
 ## Description
 This repository contains the code and data used to generate figures in the paper "Statistical

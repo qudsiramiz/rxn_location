@@ -79,11 +79,11 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
     trange = [crossing_time_min, crossing_time_max]
 
     # Get the index corresponding to the crossing time in the data
-    df_crossing_temp = pd.read_csv("../data/mms_magnetopause_crossings.csv", index_col=False)
-    df_crossing_temp.set_index("DateStart", inplace=True)
-    crossing_time_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    ind_crossing = np.where(df_crossing_temp.index == crossing_time_str)[0][0]
-
+    df_crossing_temp = pd.read_csv("../data/brst_intervals.csv", index_col=False)
+    # df_crossing_temp.set_index("DateStart", inplace=True)
+    # crossing_time_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    # # ind_crossing = np.where(df_crossing_temp.index == crossing_time_str)[0][0]
+    ind_crossing = 111
     # Get the data from the FPI
     mms_fpi_varnames = [f'mms{probe}_dis_numberdensity_{data_rate}',
                         f'mms{probe}_dis_bulkv_gse_{data_rate}',

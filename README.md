@@ -20,22 +20,22 @@ comparison of various dayside magnetopause reconnection X-line prediction models
 Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland.
 
 ## Code
-The code is written in Python 3.10 and has the following dependencies:
+The code is written for Python 3.11 or later and has the following dependencies:
 
 ```
 [tool.poetry.dependencies]
-python = ">=3.10, <3.11"
-spacepy = "^0.4.1"
-pyspedas = "^1.4.40"
+python = ">=3.11,<4.0"
+spacepy = "^0.7.0"
+pyspedas = "^2.1.3"
 tabulate = "^0.9.0"
 trjtrypy = "^0.0.0"
 joblib = "^1.3.1"
-ipython = "^8.14.0"
+ipython = "^9.15.0"
 h5py = "^3.9.0"
-scikit-image = "^0.21.0"
-more-itertools = "^9.1.0"
-seaborn = "0.12.1"
-matplotlib = "3.5.2"
+scikit-image = "^0.26.0"
+more-itertools = "^11.1.0"
+seaborn = "^0.13.2"
+matplotlib = "^3.11.0"
 
 [tool.poetry.dev-dependencies]
 

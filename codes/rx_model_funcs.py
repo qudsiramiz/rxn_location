@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pyspedas as spd
 import pytplot as ptt
+from pyspedas.projects import mms
 import scipy as sp
 import trjtrypy as tt
 from dateutil import parser
@@ -977,7 +978,7 @@ def get_sw_params(
                                       pd.to_datetime(mms_mec_trange[1])]
 
         mms_mec_varnames = [f"mms{mms_probe_num}_mec_r_gsm"]
-        _ = spd.mms.mec(trange=mms_mec_trange, varnames=mms_mec_varnames, probe=mms_probe_num,
+        _ = mms.mec(trange=mms_mec_trange, varnames=mms_mec_varnames, probe=mms_probe_num,
                         data_rate="srvy", level="l2", time_clip=time_clip, latest_version=True)
         mms_mec_time = ptt.get_data("mms3_mec_r_gsm")[0]
         # Convert mms fgm time to datetime
@@ -990,7 +991,7 @@ def get_sw_params(
         # TODO: Find out why adding "mms_fgm_varnames" as a variable causes the code to give out no
         # data.
         mms_fgm_varnames = [f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec"]
-        _ = spd.mms.fgm(trange=mms_trange, probe=mms_probe_num, time_clip=time_clip,
+        _ = mms.fgm(trange=mms_trange, probe=mms_probe_num, time_clip=time_clip,
                         latest_version=True)
         # mms_fgm_time = ptt.get_data(mms_fgm_varnames[0])[0]
 
@@ -1002,7 +1003,7 @@ def get_sw_params(
         try:
             data_rate = "fast"
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
-            _ = spd.mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
+            _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
                             level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
                             time_clip=time_clip, latest_version=True)
             _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
@@ -1018,7 +1019,7 @@ def get_sw_params(
             # Get the data from the FPI
             data_rate = "brst"
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
-            _ = spd.mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
+            _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
                             level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
                             time_clip=time_clip, latest_version=True)
             _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",

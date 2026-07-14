@@ -17,7 +17,7 @@ df_crossings = pd.read_csv("../data/brst_intervals.csv", index_col=False)
 # Set the index to the date column
 df_crossings.set_index("start_time", inplace=True)
 
-date_obs = "20230901"
+date_obs = "20260714"
 
 
 def check_jet_reversal(crossing_time):
@@ -75,12 +75,12 @@ def check_jet_reversal(crossing_time):
     return None
 
 
-@contextmanager
-def suppress_stdout_stderr():
-    """A context manager that redirects stdout and stderr to devnull"""
-    with open(os.devnull, "w") as fnull:
-        with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
-            yield (err, out)
+# @contextmanager
+# def suppress_stdout_stderr():
+#     """A context manager that redirects stdout and stderr to devnull"""
+#     with open(os.devnull, "w") as fnull:
+#         with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
+#             yield (err, out)
 
 
 # Ask the user for the minmum and maximum index number

@@ -1,5 +1,4 @@
 import pyspedas as spd
-import pytplot as ptt
 import matplotlib.pyplot as plt
 import pyspedas.projects.mms.cotrans.mms_cotrans_lmn as mms_cotrans_lmn
 from pyspedas.projects import mms
@@ -9,8 +8,9 @@ trange = ['2015-09-07 13:06:00', '2015-09-07 13:16:00']
 data_rate = 'srvy'
 probe = 3
 time_clip = True
+latest_version = False
 
-# _ = mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=True,
+# _ = mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=False,
 #                 get_fgm_ephemeris=True, varnames=mms_fgm_varnames, level='l2')
 
 mms_fgm_varnames = [f'mms{probe}_fgm_b_gsm_{data_rate}_l2', f'mms{probe}_fgm_b_gse_{data_rate}_l2',
@@ -19,15 +19,15 @@ _ = mms.fgm(
      trange=trange,
      probe=probe,
      time_clip=time_clip,
-     latest_version=True,
+     latest_version=latest_version,
      get_fgm_ephemeris=True,
      varnames=mms_fgm_varnames,
      level="l2",
  )
 
-fgm_time_unix = ptt.get_data(f'mms{probe}_fgm_b_gsm_{data_rate}_l2')[0]
-fgm_b_gsm = ptt.get_data(f'mms{probe}_fgm_b_gsm_{data_rate}_l2')[1]
-fgm_b_gse = ptt.get_data(f'mms{probe}_fgm_b_gse_{data_rate}_l2')[1]
+fgm_time_unix = spd.get_data(f'mms{probe}_fgm_b_gsm_{data_rate}_l2')[0]
+fgm_b_gsm = spd.get_data(f'mms{probe}_fgm_b_gsm_{data_rate}_l2')[1]
+fgm_b_gse = spd.get_data(f'mms{probe}_fgm_b_gse_{data_rate}_l2')[1]
 
 _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_fgm_b_gsm_{data_rate}_l2_bvec',
                                     name_out=f'mms{probe}_fgm_b_gsm_lmn_{data_rate}_l2',
@@ -37,8 +37,8 @@ _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_fgm_b_gsm_{data_rate}_l
                                     name_out=f'mms{probe}_fgm_b_gse_lmn_{data_rate}_l2',
                                     gse=True, probe=str(probe), data_rate=data_rate)
 
-fgm_b_gsm_lmn = ptt.get_data(f'mms{probe}_fgm_b_gsm_lmn_{data_rate}_l2')[1]
-fgm_b_gse_lmn = ptt.get_data(f'mms{probe}_fgm_b_gse_lmn_{data_rate}_l2')[1]
+fgm_b_gsm_lmn = spd.get_data(f'mms{probe}_fgm_b_gsm_lmn_{data_rate}_l2')[1]
+fgm_b_gse_lmn = spd.get_data(f'mms{probe}_fgm_b_gse_lmn_{data_rate}_l2')[1]
 
 fgm_time_utc = spd.time_datetime(fgm_time_unix)
 
@@ -83,7 +83,7 @@ mms_fpi_varnames = [f'mms{probe}_dis_bulkv_gse_{data_rate}',
 
 _ = mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level='l2',
                 datatype=data_type, time_clip=time_clip, varnames=mms_fpi_varnames,
-                latest_version=True, get_support_data=True)
+                latest_version=latest_version, get_support_data=True)
 
 
 _ = spd.cotrans(name_in=f'mms{probe}_dis_bulkv_gse_{data_rate}',
@@ -93,17 +93,17 @@ _ = spd.cotrans(name_in=f'mms{probe}_dis_bulkv_gse_{data_rate}',
 _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_dis_bulkv_gsm_{data_rate}',
                                     name_out=f'mms{probe}_dis_bulkv_gsm_lmn_{data_rate}',
                                     gse=False, gsm=True, probe=str(probe), 
-                                    data_rate=data_rate)
+                                    data_rate='srvy')
 
 # _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_dis_bulkv_gse_{data_rate}',
 #                                     name_out=f'mms{probe}_dis_bulkv_gse_lmn_{data_rate}',
-#                                     gse=True, gsm=False, probe=str(probe), data_rate=data_rate)
+#                                     gse=True, gsm=False, probe=str(probe), data_rate='srvy')
 
-fpi_time_unix = ptt.get_data(mms_fpi_varnames[0])[0]
-fpi_v_gse = ptt.get_data(mms_fpi_varnames[0])[1:][0]
-fpi_v_gsm = ptt.get_data(mms_fpi_varnames[1])[1:][0]
-fpi_v_gsm_lmn = ptt.get_data(mms_fpi_varnames[2])[1:][0]
-#fpi_v_gse_lmn = ptt.get_data(mms_fpi_varnames[3])[1:][0]
+fpi_time_unix = spd.get_data(mms_fpi_varnames[0])[0]
+fpi_v_gse = spd.get_data(mms_fpi_varnames[0])[1:][0]
+fpi_v_gsm = spd.get_data(mms_fpi_varnames[1])[1:][0]
+fpi_v_gsm_lmn = spd.get_data(mms_fpi_varnames[2])[1:][0]
+#fpi_v_gse_lmn = spd.get_data(mms_fpi_varnames[3])[1:][0]
 
 fpi_time_utc = spd.time_datetime(fpi_time_unix)
 

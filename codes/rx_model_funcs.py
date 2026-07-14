@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyspedas as spd
-import pytplot as ptt
 from pyspedas.projects import mms
 import scipy as sp
 import trjtrypy as tt
@@ -886,6 +885,7 @@ def get_sw_params(
     time_clip=True,
     trange=None,
     mms_probe_num=None,
+    latest_version=False,
     verbose=False
 ):
     r"""
@@ -933,17 +933,17 @@ def get_sw_params(
     omni_vars = spd.omni.data(trange=trange, varnames=omni_varnames, level=omni_level,
                               time_clip=time_clip)
 
-    omni_time = ptt.get_data(omni_vars[0])[0]
+    omni_time = spd.get_data(omni_vars[0])[0]
     # print(f"omni_time: {omni_time}")
-    omni_bx_gse = ptt.get_data(omni_vars[0])[1]
-    omni_by_gsm = ptt.get_data(omni_vars[1])[1]
-    omni_bz_gsm = ptt.get_data(omni_vars[2])[1]
-    omni_np = ptt.get_data(omni_vars[3])[1]
-    omni_vx = ptt.get_data(omni_vars[4])[1]
-    omni_vy = ptt.get_data(omni_vars[5])[1]
-    omni_vz = ptt.get_data(omni_vars[6])[1]
-    omni_sym_h = ptt.get_data(omni_vars[7])[1]
-    omni_t_p = ptt.get_data(omni_vars[8])[1]
+    omni_bx_gse = spd.get_data(omni_vars[0])[1]
+    omni_by_gsm = spd.get_data(omni_vars[1])[1]
+    omni_bz_gsm = spd.get_data(omni_vars[2])[1]
+    omni_np = spd.get_data(omni_vars[3])[1]
+    omni_vx = spd.get_data(omni_vars[4])[1]
+    omni_vy = spd.get_data(omni_vars[5])[1]
+    omni_vz = spd.get_data(omni_vars[6])[1]
+    omni_sym_h = spd.get_data(omni_vars[7])[1]
+    omni_t_p = spd.get_data(omni_vars[8])[1]
 
     # Convert omni_time to datetime objects from unix time
     omni_time_datetime = [datetime.datetime.utcfromtimestamp(t) for t in omni_time]
@@ -979,24 +979,24 @@ def get_sw_params(
 
         mms_mec_varnames = [f"mms{mms_probe_num}_mec_r_gsm"]
         _ = mms.mec(trange=mms_mec_trange, varnames=mms_mec_varnames, probe=mms_probe_num,
-                        data_rate="srvy", level="l2", time_clip=time_clip, latest_version=True)
-        mms_mec_time = ptt.get_data("mms3_mec_r_gsm")[0]
+                        data_rate="srvy", level="l2", time_clip=time_clip, latest_version=latest_version)
+        mms_mec_time = spd.get_data(f"mms{mms_probe_num}_mec_r_gsm")[0]
         # Convert mms fgm time to datetime
         mms_mec_time = np.array([datetime.datetime.utcfromtimestamp(t) for t in mms_mec_time])
 
         # Position of MMS in GSM coordinates in earth radii (r_e) units
         r_e = 6378.137  # Earth radius in km
-        mms_sc_pos = ptt.get_data("mms3_mec_r_gsm")[1:3][0] / r_e
+        mms_sc_pos = spd.get_data(f"mms{mms_probe_num}_mec_r_gsm")[1:3][0] / r_e
 
         # TODO: Find out why adding "mms_fgm_varnames" as a variable causes the code to give out no
         # data.
-        mms_fgm_varnames = [f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec"]
+        mms_fgm_varnames = [f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2"]
         _ = mms.fgm(trange=mms_trange, probe=mms_probe_num, time_clip=time_clip,
-                        latest_version=True)
-        # mms_fgm_time = ptt.get_data(mms_fgm_varnames[0])[0]
+                        latest_version=latest_version)
+        # mms_fgm_time = spd.get_data(mms_fgm_varnames[0])[0]
 
-        mms_fgm_b_gsm = ptt.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[1:4][0]
-        mms_fgm_time = ptt.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[0]
+        mms_fgm_b_gsm = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[1:4][0]
+        mms_fgm_time = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[0]
         # Convert mms fgm time to datetime
         mms_fgm_time = np.array([datetime.datetime.utcfromtimestamp(t) for t in mms_fgm_time])
 
@@ -1005,14 +1005,14 @@ def get_sw_params(
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
             _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
                             level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
-                            time_clip=time_clip, latest_version=True)
+                            time_clip=time_clip, latest_version=latest_version)
             _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
                             name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
                             coord_in="gse", coord_out="gsm")
-            mms_fpi_time = ptt.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
+            mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
             mms_fpi_time = np.array([datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time])
-            mms_fpi_bulkv_gsm = ptt.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
+            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
             if verbose:
                 print(f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n")
         except:
@@ -1021,14 +1021,14 @@ def get_sw_params(
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
             _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
                             level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
-                            time_clip=time_clip, latest_version=True)
+                            time_clip=time_clip, latest_version=latest_version)
             _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
                             name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
                             coord_in="gse", coord_out="gsm")
-            mms_fpi_time = ptt.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
+            mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
             mms_fpi_time = [datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time]
-            mms_fpi_bulkv_gsm = ptt.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
+            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
             if verbose:
                 print(f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n")
     else:
@@ -1200,6 +1200,7 @@ def rx_model(
     z_min=None,
     z_max=None,
     save_data=False,
+    latest_version=False,
     nprocesses=None
 ):
     """
@@ -1281,7 +1282,7 @@ def rx_model(
 
     # Get the solar wind parameters for the model
     sw_params = get_sw_params(probe=probe, omni_level=omni_level, trange=trange,
-                              mms_probe_num=mms_probe_num, verbose=True)
+                              mms_probe_num=mms_probe_num, latest_version=latest_version, verbose=True)
     print(sw_params)
 
     n_arr_y = int((y_max - y_min) / dr) + 1

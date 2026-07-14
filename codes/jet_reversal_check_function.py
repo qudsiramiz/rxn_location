@@ -9,12 +9,11 @@ import pandas as pd
 import pyspedas as spd
 import pyspedas.projects.mms.cotrans.mms_cotrans_lmn as mms_cotrans_lmn
 from pyspedas.projects import mms
-import pytplot as ptt
 import pytz
 
 
 def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', level='l2',
-                       coord_type='lmn', data_type='dis-moms', time_clip=True, latest_version=True,
+                       coord_type='lmn', data_type='dis-moms', time_clip=True, latest_version=False,
                        jet_len=5, figname='mms_jet_reversal_check', date_obs=None,
                        fname='../data/mms_jet_reversal_times.csv',
                        error_file_log_name="../data/mms_jet_reversal_check_error_log.csv",
@@ -81,10 +80,9 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
 
     # Get the index corresponding to the crossing time in the data
     df_crossing_temp = pd.read_csv("../data/brst_intervals.csv", index_col=False)
-    df_crossing_temp.set_index("DateStart", inplace=True)
-    crossing_time_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    ind_crossing = np.where(df_crossing_temp.index == crossing_time_str)[0][0]
-    print(ind_crossing)
+    df_crossing_temp['start_time'] = pd.to_datetime(df_crossing_temp['start_time'])
+    ind_crossing = np.where(df_crossing_temp['start_time'] == crossing_time)[0][0]
+    print("Crossing index:", ind_crossing)
     # ind_crossing = 111
     # Get the data from the FPI
     mms_fpi_varnames = [f'mms{probe}_dis_numberdensity_{data_rate}',
@@ -98,18 +96,18 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                     datatype=data_type, varnames=mms_fpi_varnames, time_clip=time_clip,
                     latest_version=latest_version)
 
-    mms_fpi_time_unix = ptt.get_data(mms_fpi_varnames[0])[0]
+    mms_fpi_time_unix = spd.get_data(mms_fpi_varnames[0])[0]
     # Convert the time to a datetime object
     mms_fpi_time_local = pd.to_datetime(mms_fpi_time_unix, unit='s')
     mms_fpi_time = mms_fpi_time_local.tz_localize(pytz.utc)
 
-    mms_fpi_numberdensity = ptt.get_data(mms_fpi_varnames[0])[1]
-    _ = ptt.get_data(mms_fpi_varnames[1])[1:4][0]
-    mms_fpi_temppara = ptt.get_data(mms_fpi_varnames[2])[1]
-    mms_fpi_tempperp = ptt.get_data(mms_fpi_varnames[3])[1]
+    mms_fpi_numberdensity = spd.get_data(mms_fpi_varnames[0])[1]
+    _ = spd.get_data(mms_fpi_varnames[1])[1:4][0]
+    mms_fpi_temppara = spd.get_data(mms_fpi_varnames[2])[1]
+    mms_fpi_tempperp = spd.get_data(mms_fpi_varnames[3])[1]
 
     # Store both the temperatures in the ptt
-    ptt.store_data('Tp', data=[f'mms{probe}_dis_temppara_{data_rate}',
+    spd.store_data('Tp', data=[f'mms{probe}_dis_temppara_{data_rate}',
                                f'mms{probe}_dis_tempperp_{data_rate}'])
 
     # Covert gse to gsm
@@ -117,16 +115,16 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                     name_out=f'mms{probe}_dis_bulkv_gsm_{data_rate}', coord_in='gse',
                     coord_out='gsm')
 
-    mms_fpi_bulkv_gsm = ptt.get_data(f'mms{probe}_dis_bulkv_gsm_{data_rate}')[1:4][0]
-    mms_fpi_bulkv_gse = ptt.get_data(f'mms{probe}_dis_bulkv_gse_{data_rate}')[1:4][0]
+    mms_fpi_bulkv_gsm = spd.get_data(f'mms{probe}_dis_bulkv_gsm_{data_rate}')[1:4][0]
+    mms_fpi_bulkv_gse = spd.get_data(f'mms{probe}_dis_bulkv_gse_{data_rate}')[1:4][0]
 
     if coord_type == 'lmn':
         # Convert gsm to lmn
         _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_dis_bulkv_gsm_{data_rate}',
                                             name_out=f'mms{probe}_dis_bulkv_lmn_{data_rate}',
-                                            gse=False, gsm=True, probe=str(probe), data_rate=data_rate)
+                                            gse=False, gsm=True, probe=str(probe), data_rate='srvy')
 
-        mms_fpi_bulkv_lmn = ptt.get_data(f'mms{probe}_dis_bulkv_lmn_{data_rate}')[1:4][0]
+        mms_fpi_bulkv_lmn = spd.get_data(f'mms{probe}_dis_bulkv_lmn_{data_rate}')[1:4][0]
 
     # Create a dataframe with the FPI data
     if coord_type == 'lmn':
@@ -189,24 +187,24 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         df_mms_fpi['vp_diff_z'] = df_mms_fpi['vp_gsm_z'] - df_mms_fpi['vp_gsm_z_rolling_median']
 
     # Get the data from the FGM
-    _ = mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=True,
+    _ = mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=False,
                     get_fgm_ephemeris=True)
     # Get the time corresponding to the FGM data
-    mms_fgm_time = ptt.get_data(f"mms{probe}_fgm_b_gsm_srvy_{level}")[0]
+    mms_fgm_time = spd.get_data(f"mms{probe}_fgm_b_gsm_srvy_{level}")[0]
     # Convert the time to a datetime object
     mms_fgm_time = pd.to_datetime(mms_fgm_time, unit='s')
     mms_fgm_time = mms_fgm_time.tz_localize(pytz.utc)
 
-    mms_fgm_b_gsm = ptt.get_data(f'mms{probe}_fgm_b_gsm_srvy_{level}')[1:4][0]
-    mms_fgm_b_gse = ptt.get_data(f'mms{probe}_fgm_b_gse_srvy_{level}')[1:4][0]
-    mms_fgm_r_gsm = ptt.get_data(f'mms{probe}_fgm_r_gsm_srvy_{level}')[1:4][0]
+    mms_fgm_b_gsm = spd.get_data(f'mms{probe}_fgm_b_gsm_srvy_{level}')[1:4][0]
+    mms_fgm_b_gse = spd.get_data(f'mms{probe}_fgm_b_gse_srvy_{level}')[1:4][0]
+    mms_fgm_r_gsm = spd.get_data(f'mms{probe}_fgm_r_gsm_srvy_{level}')[1:4][0]
 
     if coord_type == 'lmn':
         _ = mms_cotrans_lmn.mms_cotrans_lmn(name_in=f'mms{probe}_fgm_b_gsm_srvy_{level}_bvec',
                                             name_out=f'mms{probe}_fgm_b_lmn_srvy_{level}',
-                                            gsm=True, probe=str(probe), data_rate=data_rate)
+                                            gsm=True, probe=str(probe), data_rate='srvy')
 
-        mms_fgm_b_lmn = ptt.get_data(f'mms{probe}_fgm_b_lmn_srvy_{level}')[1:4][0]
+        mms_fgm_b_lmn = spd.get_data(f'mms{probe}_fgm_b_lmn_srvy_{level}')[1:4][0]
 
     # Create a dataframe with the FGM data
     if coord_type == 'lmn':
@@ -248,6 +246,11 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                                                           time_cadence_median=time_cadence_median,
                                                           verbose=verbose)
 
+    if ind_range_msp is None or ind_range_msh is None:
+        if verbose:
+            print(f'\n\033[1;31m Magnetosphere or magnetosheath region not found for date {crossing_time}\033[0m \n')
+        return None
+
     (jet_detection, delta_v_min, delta_v_max, t_jet_center, ind_jet_center,
      ind_jet_center_minus_1_min, ind_jet_center_plus_1_min, vp_lmn_diff_l) = check_jet_location(
         df_mms=df_mms, jet_len=jet_len, v_thresh=70, ind_msh=ind_range_msh,
@@ -266,42 +269,42 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         t_delta_v_max_unix = np.array(t_delta_v_max_unix)
 
         # Add delta_v_min and delta_v_max to ptt
-        ptt.store_data('delta_v_min', data={'x': t_delta_v_min_unix,
+        spd.store_data('delta_v_min', data={'x': t_delta_v_min_unix,
                                             'y': delta_v_min})
-        ptt.store_data('delta_v_max', data={'x': t_delta_v_max_unix,
+        spd.store_data('delta_v_max', data={'x': t_delta_v_max_unix,
                                             'y': delta_v_max})
-        ptt.store_data('delta_v', data=['delta_v_min', 'delta_v_max'])
-
-        # Add vp_lmn_diff_l to ptt
-        ptt.store_data('vp_lmn_diff_l', data={'x': mms_fpi_time_unix,
-                                              'y': vp_lmn_diff_l})
-
+        spd.store_data('delta_v', data=['delta_v_min', 'delta_v_max'])
+        
         # Add delta_v and vp_lmn_diff_l to ptt
-        ptt.store_data('delta_v_vp_lmn_diff_l', data=['vp_lmn_diff_l', 'delta_v_min', 'delta_v_max'])
+        spd.store_data('delta_v_vp_lmn_diff_l', data=['vp_lmn_diff_l', 'delta_v_min', 'delta_v_max'])
+
+    # Add vp_lmn_diff_l to ptt
+    spd.store_data('vp_lmn_diff_l', data={'x': mms_fpi_time_unix,
+                                          'y': vp_lmn_diff_l})
 
     # Get different parameters for magnetosphere and magnetosheath
-    np_msp = df_mms['np'][ind_range_msp] * 1e6  # Convert to m^-3 from cm^-3
-    np_msh = df_mms['np'][ind_range_msh] * 1e6  # Convert to m^-3 from cm^-3
+    np_msp = df_mms['np'].iloc[ind_range_msp] * 1e6  # Convert to m^-3 from cm^-3
+    np_msh = df_mms['np'].iloc[ind_range_msh] * 1e6  # Convert to m^-3 from cm^-3
 
     if coord_type == 'lmn':
 
-        vp_lmn_vec_msp = np.array([df_mms['vp_lmn_n'][ind_range_msp],
-                                   df_mms['vp_lmn_m'][ind_range_msp],
-                                   df_mms['vp_lmn_l'][ind_range_msp]]) * 1e3  # Convert to m/s
+        vp_lmn_vec_msp = np.array([df_mms['vp_lmn_n'].iloc[ind_range_msp],
+                                   df_mms['vp_lmn_m'].iloc[ind_range_msp],
+                                   df_mms['vp_lmn_l'].iloc[ind_range_msp]]) * 1e3  # Convert to m/s
         vp_lmn_vec_msp = vp_lmn_vec_msp.T
 
-        vp_lmn_vec_msh = np.array([df_mms['vp_lmn_n'][ind_range_msh],
-                                   df_mms['vp_lmn_m'][ind_range_msh],
-                                   df_mms['vp_lmn_l'][ind_range_msh]]) * 1e3  # Convert to m/s
+        vp_lmn_vec_msh = np.array([df_mms['vp_lmn_n'].iloc[ind_range_msh],
+                                   df_mms['vp_lmn_m'].iloc[ind_range_msh],
+                                   df_mms['vp_lmn_l'].iloc[ind_range_msh]]) * 1e3  # Convert to m/s
         vp_lmn_vec_msh = vp_lmn_vec_msh.T
 
-        b_lmn_vec_msp = np.array([df_mms['b_lmn_n'][ind_range_msp],
-                                  df_mms['b_lmn_m'][ind_range_msp],
-                                  df_mms['b_lmn_l'][ind_range_msp]]) * 1e-9  # Convert to T from nT
+        b_lmn_vec_msp = np.array([df_mms['b_lmn_n'].iloc[ind_range_msp],
+                                  df_mms['b_lmn_m'].iloc[ind_range_msp],
+                                  df_mms['b_lmn_l'].iloc[ind_range_msp]]) * 1e-9  # Convert to T from nT
         b_lmn_vec_msp = b_lmn_vec_msp.T
-        b_lmn_vec_msh = np.array([df_mms['b_lmn_n'][ind_range_msh],
-                                  df_mms['b_lmn_m'][ind_range_msh],
-                                  df_mms['b_lmn_l'][ind_range_msh]]) * 1e-9  # Convert to T from nT
+        b_lmn_vec_msh = np.array([df_mms['b_lmn_n'].iloc[ind_range_msh],
+                                  df_mms['b_lmn_m'].iloc[ind_range_msh],
+                                  df_mms['b_lmn_l'].iloc[ind_range_msh]]) * 1e-9  # Convert to T from nT
         b_lmn_vec_msh = b_lmn_vec_msh.T
 
         # Get the mean and median values of np, vp, and b for the magnetosphere and magnetosheath
@@ -327,27 +330,27 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                                                     np.linalg.norm(b_lmn_vec_msh_median))
                                                    ) * 180 / np.pi
     else:
-        vp_gse_vec_msp = np.array([df_mms['vp_gse_x'][ind_range_msp],
-                                   df_mms['vp_gse_y'][ind_range_msp],
-                                   df_mms['vp_gse_z'][ind_range_msp]]) * 1e3  # Convert km/s==> m/s
+        vp_gse_vec_msp = np.array([df_mms['vp_gse_x'].iloc[ind_range_msp],
+                                   df_mms['vp_gse_y'].iloc[ind_range_msp],
+                                   df_mms['vp_gse_z'].iloc[ind_range_msp]]) * 1e3  # Convert km/s==> m/s
         vp_gse_vec_msp = vp_gse_vec_msp.T
-        vp_gse_vec_msh = np.array([df_mms['vp_gse_x'][ind_range_msh],
-                                   df_mms['vp_gse_y'][ind_range_msh],
-                                   df_mms['vp_gse_z'][ind_range_msh]]) * 1e3  # Convert km/s==> m/s
+        vp_gse_vec_msh = np.array([df_mms['vp_gse_x'].iloc[ind_range_msh],
+                                   df_mms['vp_gse_y'].iloc[ind_range_msh],
+                                   df_mms['vp_gse_z'].iloc[ind_range_msh]]) * 1e3  # Convert km/s==> m/s
         vp_gse_vec_msh = vp_gse_vec_msh.T
-        b_gse_vec_msp = np.array([df_mms['b_gse_x'][ind_range_msp],
-                                  df_mms['b_gse_y'][ind_range_msp],
-                                  df_mms['b_gse_z'][ind_range_msp]]) * 1e-9  # Convert to T from nT
+        b_gse_vec_msp = np.array([df_mms['b_gse_x'].iloc[ind_range_msp],
+                                  df_mms['b_gse_y'].iloc[ind_range_msp],
+                                  df_mms['b_gse_z'].iloc[ind_range_msp]]) * 1e-9  # Convert to T from nT
         b_gse_vec_msp = b_gse_vec_msp.T
-        b_gse_vec_msh = np.array([df_mms['b_gse_x'][ind_range_msh],
-                                  df_mms['b_gse_y'][ind_range_msh],
-                                  df_mms['b_gse_z'][ind_range_msh]]) * 1e-9  # Convert to T from nT
+        b_gse_vec_msh = np.array([df_mms['b_gse_x'].iloc[ind_range_msh],
+                                  df_mms['b_gse_y'].iloc[ind_range_msh],
+                                  df_mms['b_gse_z'].iloc[ind_range_msh]]) * 1e-9  # Convert to T from nT
         b_gse_vec_msh = b_gse_vec_msh.T
 
-    tp_para_msp = df_mms['tp_para'][ind_range_msp] * ev_to_K  # Convert to K from ev
-    tp_para_msh = df_mms['tp_para'][ind_range_msh] * ev_to_K  # Convert to K from ev
-    tp_perp_msp = df_mms['tp_perp'][ind_range_msp] * ev_to_K  # Convert to K from ev
-    tp_perp_msh = df_mms['tp_perp'][ind_range_msh] * ev_to_K  # Convert to K from ev
+    tp_para_msp = df_mms['tp_para'].iloc[ind_range_msp] * ev_to_K  # Convert to K from ev
+    tp_para_msh = df_mms['tp_para'].iloc[ind_range_msh] * ev_to_K  # Convert to K from ev
+    tp_perp_msp = df_mms['tp_perp'].iloc[ind_range_msp] * ev_to_K  # Convert to K from ev
+    tp_perp_msh = df_mms['tp_perp'].iloc[ind_range_msh] * ev_to_K  # Convert to K from ev
 
     # Get the mean and median values of temperature for the magnetosphere and magnetosheath
     tp_para_msp_median = np.nanmedian(tp_para_msp)
@@ -374,7 +377,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         # Position of MMS in GSM coordinates in earth radii (r_e) units
         r_e = 6378.137  # Earth radius in km
         # _ = spd.mms.mec
-        # mms_sc_pos = ptt.get_data(mms_mec_varnames[0])[1:3][0][0] / r_e
+        # mms_sc_pos = spd.get_data(mms_mec_varnames[0])[1:3][0][0] / r_e
         x = np.nanmean(mms_fgm_r_gsm[:, 0]) / r_e
         y = np.nanmean(mms_fgm_r_gsm[:, 1]) / r_e
         z = np.nanmean(mms_fgm_r_gsm[:, 2]) / r_e
@@ -470,7 +473,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                         print(f'Data for all keys written to file {fname}')
                     f.close()
 
-    tplot_fnc(ptt=ptt, probe=probe, data_rate=data_rate, df_mms=df_mms,
+    tplot_fnc(probe=probe, data_rate=data_rate, level=level, df_mms=df_mms,
               ind_range_msp=ind_range_msp, ind_range_msh=ind_range_msh, t_jet_center=t_jet_center,
               jet_detection=jet_detection, ind_crossing=ind_crossing,
               shear_val=int(angle_b_lmn_vec_msp_msh_median), date_obs=date_obs)
@@ -535,9 +538,9 @@ def check_jet_location(df_mms=None, jet_len=3, time_cadence_median=0.15, v_thres
     delta_jet_min_max_ind = int(60 / time_cadence_median)
     # Get the median value of the velocity corresponding to the magnetosheath in the lmn coordinate
     # system
-    vp_lmn_vec_msh_median = np.array([np.nanmedian(df_mms['vp_lmn_l'][ind_msh]),
-                                      np.nanmedian(df_mms['vp_lmn_m'][ind_msh]),
-                                      np.nanmedian(df_mms['vp_lmn_n'][ind_msh])])
+    vp_lmn_vec_msh_median = np.array([np.nanmedian(df_mms['vp_lmn_l'].iloc[ind_msh]),
+                                      np.nanmedian(df_mms['vp_lmn_m'].iloc[ind_msh]),
+                                      np.nanmedian(df_mms['vp_lmn_n'].iloc[ind_msh])])
 
     # Subtract the median value of the velocity corresponding to the magnetosheath from the velocity
     # in the lmn coordinate system
@@ -740,6 +743,9 @@ def check_msp_msh_location(df_mms=None, time_cadence_median=0.15, verbose=True):
     # TODO: Check if threshold value of 5 and 10 are fine or if we need to decrease/increase it
     n_thresh_msp = 5
     n_thresh_msh = 10
+    
+    ind_range_msp = None
+    ind_range_msh = None
 
     # Compute the median time difference between the points
     # NOTE: The reason for factor 10**9 is to convert the time difference to seconds from
@@ -812,7 +818,7 @@ def check_msp_msh_location(df_mms=None, time_cadence_median=0.15, verbose=True):
     return ind_range_msp, ind_range_msh
 
 
-def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=None,
+def tplot_fnc(probe=3, data_rate='brst', level='l2', df_mms=None, ind_range_msp=None,
               ind_range_msh=None, t_jet_center=None,  jet_detection=False, ind_crossing=None,
               shear_val=None, date_obs=None,):
     """
@@ -820,8 +826,6 @@ def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=No
 
     Parameters
     ----------
-    ptt : str
-        The pytplot object
     probe : int
         The probe number. Default is 3
     data_rate : str
@@ -870,22 +874,23 @@ def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=No
     # Define the size of the figure
     plt.rcParams['figure.figsize'] = [10, 12]
 
-    tplot_global_options = {"show_all_axes": True,
-                            "black_background": True,
-                            "crosshair": True,
-                            "vertical_spacing": 0,
-                            "wsize": [1080, 1080],
+    tplot_global_options = {
+                            # "show_all_axes": True,
+                            # "black_background": True,
+                            # "crosshair": True,
+                            # "vertical_spacing": 0,
+                            # "wsize": [1080, 1080],
                             }
     for key in tplot_global_options:
-        ptt.tplot_options(key, tplot_global_options[key])
+        spd.tplot_options(key, tplot_global_options[key])
 
     keys_to_plot = [f'mms{probe}_dis_energyspectr_omni_{data_rate}',
                     # f'mms{probe}_des_energyspectr_omni_{data_rate}',
-                    'mms3_fgm_b_lmn_srvy_l2',
+                    f'mms{probe}_fgm_b_lmn_srvy_{level}',
                     f'mms{probe}_dis_numberdensity_{data_rate}',
                     'Tp',
                     f'mms{probe}_dis_bulkv_lmn_{data_rate}',
-                    'delta_v_vp_lmn_diff_l'
+                    'delta_v_vp_lmn_diff_l' if jet_detection else 'vp_lmn_diff_l'
                     ]
 
     ion_energy_spectr_dict_option = {'Colormap': "viridis_r",
@@ -937,28 +942,42 @@ def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=No
     print(f"\n Jet detection: {jet_detection} \n")
 
     # Define the limits of the delta v plot
-    dv_min_min = np.nanmin(ptt.get_data("delta_v_min")[1:])
-    dv_min_max = np.nanmax(ptt.get_data("delta_v_min")[1:])
-    dv_max_min = np.nanmin(ptt.get_data("delta_v_max")[1:])
-    dv_max_max = np.nanmax(ptt.get_data("delta_v_max")[1:])
-    dv_vpl_min = np.nanmin(ptt.get_data("vp_lmn_diff_l")[1:])
-    dv_vpl_max = np.nanmax(ptt.get_data("vp_lmn_diff_l")[1:])
+    dv_vpl_min = np.nanmin(spd.get_data("vp_lmn_diff_l")[1:])
+    dv_vpl_max = np.nanmax(spd.get_data("vp_lmn_diff_l")[1:])
 
-    dv_min = 1.1 * min(dv_min_min, dv_max_min, dv_vpl_min)
-    dv_max = 1.1 * max(dv_min_max, dv_max_max, dv_vpl_max)
+    if jet_detection:
+        dv_min_min = np.nanmin(spd.get_data("delta_v_min")[1:])
+        dv_min_max = np.nanmax(spd.get_data("delta_v_min")[1:])
+        dv_max_min = np.nanmin(spd.get_data("delta_v_max")[1:])
+        dv_max_max = np.nanmax(spd.get_data("delta_v_max")[1:])
 
-    delta_v_dict_option = {'color': ['blue', 'green', 'red'],
-                           'linestyle': ['-', '--', '--'],
-                           'lw': [1, 2, 2],
-                           'yrange': [dv_min, dv_max],
-                           'ytitle': '$\\Delta v$',
-                           'ysubtitle': '[km/s]',
-                           'xtitle': 'Time',
-                           'xsubtitle': '(HH:MM) [UTC]',
-                           'legend_names': ['$\\Delta \\rm v_{\\rm i,L}$',
-                                            '$\\Delta \\rm v_{\\rm min}$',
-                                            '$\\Delta \\rm v_{\\rm max}$'],
-                           }
+        dv_min = 1.1 * min(dv_min_min, dv_max_min, dv_vpl_min)
+        dv_max = 1.1 * max(dv_min_max, dv_max_max, dv_vpl_max)
+
+        delta_v_dict_option = {'color': ['blue', 'green', 'red'],
+                               'linestyle': ['-', '--', '--'],
+                               'yrange': [dv_min, dv_max],
+                               'ytitle': '$\\Delta v$',
+                               'ysubtitle': '[km/s]',
+                               'xtitle': 'Time',
+                               'xsubtitle': '(HH:MM) [UTC]',
+                               'legend_names': ['$\\Delta \\rm v_{\\rm i,L}$',
+                                                '$\\Delta \\rm v_{\\rm min}$',
+                                                '$\\Delta \\rm v_{\\rm max}$'],
+                               }
+    else:
+        dv_min = 1.1 * dv_vpl_min
+        dv_max = 1.1 * dv_vpl_max
+
+        delta_v_dict_option = {'color': ['blue'],
+                               'linestyle': ['-'],
+                               'yrange': [dv_min, dv_max],
+                               'ytitle': '$\\Delta v$',
+                               'ysubtitle': '[km/s]',
+                               'xtitle': 'Time',
+                               'xsubtitle': '(HH:MM) [UTC]',
+                               'legend_names': ['$\\Delta \\rm v_{\\rm i,L}$'],
+                               }
 
     msp_time = df_mms.index[ind_range_msp[int(len(ind_range_msp)/2)]]
     msh_time = df_mms.index[ind_range_msh[int(len(ind_range_msh)/2)]]
@@ -967,21 +986,21 @@ def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=No
     msp_time_unix = msp_time.timestamp()
     msh_time_unix = msh_time.timestamp()
     t_jet_center_unix = t_jet_center.timestamp()
-    ptt.timebar(msp_time_unix, databar=False, color='red', dash=True, thick=2)
-    ptt.timebar(msh_time_unix, databar=False, color='blue', dash=True, thick=2)
-    ptt.timebar(t_jet_center_unix, databar=False, color='green', dash=True, thick=1)
+    spd.timebar(msp_time_unix, databar=False, color='red', dash=True, thick=2)
+    spd.timebar(msh_time_unix, databar=False, color='blue', dash=True, thick=2)
+    spd.timebar(t_jet_center_unix, databar=False, color='green', dash=True, thick=1)
 
-    ptt.options(f'mms{probe}_dis_energyspectr_omni_{data_rate}',
+    spd.options(f'mms{probe}_dis_energyspectr_omni_{data_rate}',
                 opt_dict=ion_energy_spectr_dict_option)
-    ptt.options(f'mms{probe}_des_energyspectr_omni_{data_rate}',
+    spd.options(f'mms{probe}_des_energyspectr_omni_{data_rate}',
                 opt_dict=electron_energy_spectr_dict_option)
-    ptt.options(f'mms{probe}_dis_numberdensity_{data_rate}',
+    spd.options(f'mms{probe}_dis_numberdensity_{data_rate}',
                 opt_dict=number_density_dict_option)
 
-    ptt.options('Tp', opt_dict=tp_dict_option)
-    ptt.options('mms3_fgm_b_lmn_srvy_l2', opt_dict=b_dict_option)
-    ptt.options(f'mms{probe}_dis_bulkv_lmn_{data_rate}', opt_dict=bulkv_dict_option)
-    ptt.options('delta_v_vp_lmn_diff_l', opt_dict=delta_v_dict_option)
+    spd.options('Tp', opt_dict=tp_dict_option)
+    spd.options(f'mms{probe}_fgm_b_lmn_srvy_{level}', opt_dict=b_dict_option)
+    spd.options(f'mms{probe}_dis_bulkv_lmn_{data_rate}', opt_dict=bulkv_dict_option)
+    spd.options('delta_v_vp_lmn_diff_l' if jet_detection else 'vp_lmn_diff_l', opt_dict=delta_v_dict_option)
 
     if jet_detection:
         folder_name = f"../figures/jet_reversal_checks/check_{date_obs}/{data_rate}/jet"
@@ -997,6 +1016,6 @@ def tplot_fnc(ptt=None, probe=3, data_rate='brst', df_mms=None, ind_range_msp=No
     figname = f"{folder_name}/mms{probe}_{t_jet_center.strftime('%Y%m%d_%H%M')}_" + \
               f"{str(ind_crossing).zfill(5)}_{shear_val}s_"
 
-    ptt.tplot(keys_to_plot, save_png=figname, display=False)
+    spd.tplot(keys_to_plot, save_png=figname, display=False)
 
     return None

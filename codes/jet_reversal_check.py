@@ -36,7 +36,7 @@ def check_jet_reversal(crossing_time):
               "coord_type": "lmn",
               "data_type": ["dis-moms", "des-moms"],
               "time_clip": True,
-              "latest_version": True,
+              "latest_version": False,
               "date_obs": date_obs,
               "figname": "mms_jet_reversal_check_lmn_mean",
               "fname": f"../data/mms_jet_reversal_times_list_{date_obs}_brst.csv",
@@ -75,12 +75,12 @@ def check_jet_reversal(crossing_time):
     return None
 
 
-# @contextmanager
-# def suppress_stdout_stderr():
-#     """A context manager that redirects stdout and stderr to devnull"""
-#     with open(os.devnull, "w") as fnull:
-#         with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
-#             yield (err, out)
+@contextmanager
+def suppress_stdout_stderr():
+    """A context manager that redirects stdout and stderr to devnull"""
+    with open(os.devnull, "w") as fnull:
+        with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
+            yield (err, out)
 
 
 # Ask the user for the minmum and maximum index number
@@ -90,7 +90,9 @@ indx_max = int(input("Enter the maximum index number: "))
 if __name__ == "__main__":
     # with suppress_stdout_stderr():
     for xx, crossing_time in enumerate(df_crossings.index[indx_min:indx_max], start=indx_min):
-        try:
-            check_jet_reversal(crossing_time)
-        except Exception as e:
-            pass
+        check_jet_reversal(crossing_time)
+        # try:
+        #     check_jet_reversal(crossing_time)
+        # except Exception as e:
+        #     print(f"\033[91;31m\n{e} for date {crossing_time}\n\033[0m")
+        #     pass

@@ -7,7 +7,8 @@ import more_itertools as mit
 import numpy as np
 import pandas as pd
 import pyspedas as spd
-import pyspedas.mms.cotrans.mms_cotrans_lmn as mms_cotrans_lmn
+import pyspedas.projects.mms.cotrans.mms_cotrans_lmn as mms_cotrans_lmn
+from pyspedas.projects import mms
 import pytplot as ptt
 import pytz
 
@@ -80,10 +81,11 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
 
     # Get the index corresponding to the crossing time in the data
     df_crossing_temp = pd.read_csv("../data/brst_intervals.csv", index_col=False)
-    # df_crossing_temp.set_index("DateStart", inplace=True)
-    # crossing_time_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    # # ind_crossing = np.where(df_crossing_temp.index == crossing_time_str)[0][0]
-    ind_crossing = 111
+    df_crossing_temp.set_index("DateStart", inplace=True)
+    crossing_time_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    ind_crossing = np.where(df_crossing_temp.index == crossing_time_str)[0][0]
+    print(ind_crossing)
+    # ind_crossing = 111
     # Get the data from the FPI
     mms_fpi_varnames = [f'mms{probe}_dis_numberdensity_{data_rate}',
                         f'mms{probe}_dis_bulkv_gse_{data_rate}',
@@ -92,7 +94,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                         f'mms{probe}_dis_energyspectr_omni_{data_rate}',
                         f'mms{probe}_des_energyspectr_omni_{data_rate}']
 
-    _ = spd.mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level=level,
+    _ = mms.fpi(trange=trange, probe=probe, data_rate=data_rate, level=level,
                     datatype=data_type, varnames=mms_fpi_varnames, time_clip=time_clip,
                     latest_version=latest_version)
 
@@ -187,7 +189,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         df_mms_fpi['vp_diff_z'] = df_mms_fpi['vp_gsm_z'] - df_mms_fpi['vp_gsm_z_rolling_median']
 
     # Get the data from the FGM
-    _ = spd.mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=True,
+    _ = mms.fgm(trange=trange, probe=probe, time_clip=time_clip, latest_version=True,
                     get_fgm_ephemeris=True)
     # Get the time corresponding to the FGM data
     mms_fgm_time = ptt.get_data(f"mms{probe}_fgm_b_gsm_srvy_{level}")[0]

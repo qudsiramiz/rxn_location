@@ -62,7 +62,12 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
 
     Returns
     -------
-    None
+    fig : matplotlib.figure.Figure or plotly.graph_objects.Figure
+        The generated figure showing the MMS data and jet reversal.
+    jet_detection : bool
+        True if a jet was detected during the magnetopause crossing, False otherwise.
+    data_dict : dict
+        A dictionary containing extracted parameters at the jet center, including time, position, shear angle, and field parameters.
     """
 
     # Define the absolute permeability of free space in m^2 kg^-1 s^-1
@@ -481,7 +486,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
 def check_jet_location(df_mms=None, jet_len=3, time_cadence_median=0.15, v_thresh=70,
                        ind_msh=None, verbose=True, ind_crossing=None, date_obs=None):
     """
-    This function checks if a jet is present in the given data frame.
+    Detects the presence and characteristics of a reconnection jet within the provided MMS data.
 
     Parameters
     ----------
@@ -719,7 +724,7 @@ def check_jet_location(df_mms=None, jet_len=3, time_cadence_median=0.15, v_thres
 
 def check_msp_msh_location(df_mms=None, time_cadence_median=0.15, verbose=True):
     """
-    Try to find the location of the msh and msp
+    Determine the data indices corresponding to the magnetosheath (MSH) and magnetosphere (MSP) based on proton density thresholds.
 
     Parameters
     ----------
@@ -732,10 +737,10 @@ def check_msp_msh_location(df_mms=None, time_cadence_median=0.15, verbose=True):
 
     Returns
     -------
-    ind_range_msh : numpy.ndarray
-        Location of the msh
-    ind_range_msp : numpy.ndarray
-        Location of the msp
+    ind_range_msh : numpy.ndarray or None
+        Indices representing the location of the magnetosheath, or None if not found.
+    ind_range_msp : numpy.ndarray or None
+        Indices representing the location of the magnetosphere, or None if not found.
     """
     # TODO: Check if threshold value of 5 and 10 are fine or if we need to decrease/increase it
     n_thresh_msp = 5

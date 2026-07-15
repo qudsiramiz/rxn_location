@@ -27,26 +27,26 @@ from tabulate import tabulate
 
 def get_shear(b_vec_1, b_vec_2, angle_unit="radians"):
     r"""
-    Get the shear angle between two magnetic field lines.
+    Calculate the magnetic shear angle between two magnetic field vectors.
 
     Parameters
     ----------
-    b_vec_1 : array of shape 1x3
-        Input magnetic field vector.
-    b_vec_2 : array of shape 1x3
-        Input magnetic field vector.
+    b_vec_1 : array-like of shape (3,)
+        First input magnetic field vector.
+    b_vec_2 : array-like of shape (3,)
+        Second input magnetic field vector.
     angle_unit : str, optional
         Preferred unit of angle returned by the code. Default is "radians".
 
     Raises
     ------
-    KeyError If the key is not input_angle is not set to "radians" or "degrees" then the code raises
-        a key error.
+    KeyError
+        If `angle_unit` is not set to "radians" or "degrees".
 
     Returns
     -------
-    angle: float
-        Angle between the two vectors, in radians by default
+    angle : float
+        Angle between the two vectors, in radians by default.
     """
     unit_vec_1 = b_vec_1 / np.linalg.norm(b_vec_1)
     unit_vec_2 = b_vec_2 / np.linalg.norm(b_vec_2)
@@ -62,23 +62,23 @@ def get_shear(b_vec_1, b_vec_2, angle_unit="radians"):
 
 def get_rxben(b_vec_1, b_vec_2):
     r"""
-    Get the reconnection energy between two magnetic field lines.
+    Calculate the reconnection energy between two magnetic field lines.
 
     It has the following mathematical expression:
 
-    .. math:: rexben = 0.5 (|\vec{B_1}| + \vec{B_2}) (1 - \hat{B_1} \cdot \hat{B_2})
+    .. math:: rexben = 0.5 (|\vec{B_1}| + |\vec{B_2}|) (1 - \hat{B_1} \cdot \hat{B_2})
 
     Parameters
     ----------
-    b_vec_1 : array of shape 1x3
-        Input magnetic field vector.
-    b_vec_2 : array of shape 1x3
-        Input magnetic field vector.
+    b_vec_1 : array-like of shape (3,)
+        First input magnetic field vector.
+    b_vec_2 : array-like of shape (3,)
+        Second input magnetic field vector.
 
     Returns
     -------
     rxben : float
-        Reconnection field energy density in nPa
+        Reconnection field energy density in nPa.
     """
 
     # alpha = - 14.87 * np.pi / 180  # radians (From Hesse2013)
@@ -109,23 +109,23 @@ def get_rxben(b_vec_1, b_vec_2):
 
 def get_vcs(b_vec_1, b_vec_2, n_1, n_2):
     r"""
-    Get vcs code.
+    Calculate the Cassak-Shay asymmetric reconnection exhaust velocity.
 
     Parameters
     ----------
-    b_vec_1 : array of shape 1x3
-        Input magnetic field vector.
-    b_vec_2 : array of shape 1x3
-        Input magnetic field vector.
+    b_vec_1 : array-like of shape (3,)
+        First input magnetic field vector.
+    b_vec_2 : array-like of shape (3,)
+        Second input magnetic field vector.
     n_1 : float
-        Density of first component
+        Plasma number density of the first component.
     n_2 : float
-        Density of second component
+        Plasma number density of the second component.
 
     Returns
     -------
     vcs : float
-        The exhaust velocity in km/s
+        The exhaust velocity in km/s.
     """
     va_p1 = 21.812  # conv. nT, m_P/cm ^ 3 product to km/s cassak-shay
 
@@ -155,28 +155,21 @@ def get_vcs(b_vec_1, b_vec_2, n_1, n_2):
 
 def get_bis(b_vec_1, b_vec_2):
     r"""
-    Get the shear angle between two magnetic field lines.
+    Calculate the bisector field components of two magnetic field lines.
 
     Parameters
     ----------
-    b_vec_1 : array of shape 1x3
+    b_vec_1 : array-like of shape (3,)
         First input magnetic field vector.
-    b_vec_2 : array of shape 1x3
+    b_vec_2 : array-like of shape (3,)
         Second input magnetic field vector.
-
-    Raises
-    ------
-    KeyError If the key is not input_angle is not set to "radians" or "degrees" then the code raises
-        a key error.
 
     Returns
     -------
     bis_field_1 : float
-        The magnitude of bisected field line corresponding to the first input magnetic field vector.
-
+        The magnitude of the bisected field line corresponding to the first input magnetic field vector.
     bis_field_2 : float
-        The magnitude of bisected field line corresponding to the second input magnetic field
-        vector.
+        The magnitude of the bisected field line corresponding to the second input magnetic field vector.
     """
     b_vec_1 = np.array(b_vec_1)
     b_vec_2 = np.array(b_vec_2)
@@ -202,24 +195,24 @@ def get_bis(b_vec_1, b_vec_2):
 
 def get_ca(b_vec, angle_unit="radians"):
     r"""
-    Get ca.
+    Calculate the cone angle of a magnetic field vector.
 
     Parameters
     ----------
-    b_vec : array of shape 1x3
+    b_vec : array-like of shape (3,)
         Input magnetic field vector.
     angle_unit : str, optional
         Preferred unit of angle returned by the code. Default is "radians".
 
     Raises
     ------
-    KeyError If the key is not input_angle is not set to "radians" or "degrees" then the code raises
-        a key error.
+    KeyError
+        If `angle_unit` is not set to "radians" or "degrees".
 
     Returns
     -------
-    angle : float Returns arctan of y- and z-component of the magnetic field vector.
-
+    angle : float
+        Returns the arctangent of the y- and z-components of the magnetic field vector.
     """
     angle = np.arctan(b_vec[1] / b_vec[2])
 
@@ -785,9 +778,23 @@ def ridge_finder_multiple(
 
 
 def model_run(*args):
-    """
-    Returns the value of the magnetic field at a given point in the model grid using three different
-    models
+    r"""
+    Calculate the magnetic field and reconnection parameters at a specific grid point.
+
+    This function is designed to be mapped concurrently across a grid of points on the magnetopause.
+    It returns the magnetic field values and associated reconnection metrics based on the given model.
+
+    Parameters
+    ----------
+    args : tuple
+        A single tuple containing all arguments packed together for multiprocessing.
+        The elements are: (j, k, y_max, z_max, dr, m_p, ro, alpha, rmp, sw_params, model_type).
+
+    Returns
+    -------
+    tuple
+        A tuple containing the following elements:
+        (j, k, bx, by, bz, shear, rx_en, va_cs, bisec_msp, bisec_msh, x_shu, y_shu, z_shu, b_msx, b_msy, b_msz)
     """
     j = args[0][0]
     k = args[0][1]
@@ -897,7 +904,7 @@ def get_sw_params(
     verbose=False
 ):
     r"""
-    Get the solar wind parameters from the OMNI database.
+    Retrieve and process solar wind parameters and spacecraft location from the OMNI and MMS databases.
 
     Parameters
     ----------
@@ -1261,9 +1268,18 @@ def rx_model(
     save_data : bool, optional
         Whether to save the data or not. Default is False. If True, the data will be saved in a
         "HDF5" file.
+    latest_version : bool, optional
+        Whether to use the latest version of the data. Default is False.
     nprocesses : int, optional
         The number of processes to use for the computation. Default is None, in which case the
         number of processes will be set to the number of cores in the system.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the computed solar wind parameters, input model grid coordinates, 
+        and the resulting arrays for magnetospheric and magnetosheath fields, shear angle, 
+        reconnection energy, exhaust velocity, and bisection fields.
     """
 
     if y_min is None:

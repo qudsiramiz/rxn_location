@@ -685,6 +685,7 @@ def main():
                     "b_imf_y": r"IMF By",
                     "imf_clock_angle": r"IMF Clock Angle",
                     "cone_angle": r"Cone Angle",
+                    "p_dyn": r"Dynamic Pressure",
                     "msh_msp_shear": r"Shear Angle",
                     "r_rc": "Reconnection Distance",
                     "delta_beta": "Delta Beta"

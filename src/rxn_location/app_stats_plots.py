@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from rxn_location import seaborn_plots_fncs as spf
 from rxn_location import rc_stats_fncs as rcsf
 
@@ -15,6 +16,7 @@ def generate_statistics_plots(csv_file_path, dark_mode=False, selected_plots=["H
         "b_imf_y": r"IMF $B_{\rm y}$ [nT]",
         "imf_clock_angle": r"IMF Clock Angle [$^{\circ}$]",
         "cone_angle": r"Cone Angle [$^{\circ}$]",
+        "p_dyn": r"Dynamic Pressure [nPa]",
         "msh_msp_shear": r"Shear Angle [$^{\circ}$]",
         "r_rc": r"Reconnection Distance [$R_{\rm E}$]",
         "delta_beta": r"$\Delta \beta$"
@@ -44,10 +46,10 @@ def generate_statistics_plots(csv_file_path, dark_mode=False, selected_plots=["H
 
     # Prepare data for other plots
     if any(p in selected_plots for p in ["KDE Plots", "2D Histograms", "Scatter Plots", "MMS Location Scatter Plot"]):
-        df_shear = df[df.method_used == "shear"].copy()
-        df_rx_en = df[df.method_used == "rx_en"].copy()
-        df_va_cs = df[df.method_used == "va_cs"].copy()
-        df_bisec = df[df.method_used == "bisection"].copy()
+        df_shear = df[df.method_used.isin(["shear", "Shear"])].copy()
+        df_rx_en = df[df.method_used.isin(["rx_en", "Reconnection Energy"])].copy()
+        df_va_cs = df[df.method_used.isin(["va_cs", "Exhaust Velocity"])].copy()
+        df_bisec = df[df.method_used.isin(["bisection", "Bisection Field"])].copy()
         
         for df_n in [df_shear, df_rx_en, df_va_cs, df_bisec]:
             if len(df_n) > 0:

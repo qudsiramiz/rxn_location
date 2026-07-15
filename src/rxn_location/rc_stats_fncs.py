@@ -7,7 +7,7 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 from matplotlib.pyplot import MaxNLocator
-import rx_model_funcs as rmf
+from . import rx_model_funcs as rmf
 
 importlib.reload(rmf)
 
@@ -26,7 +26,7 @@ mtick_width = 0.7  # minor tick width in points
 label_pad = 5  # padding between label and axis
 
 
-def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="../figures",
+def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="figures",
               fig_name="new", fig_format="pdf", histtype="step", linewidth=1, cut_type="jet",
               r_lim=[0, 15], density=False):
 
@@ -95,7 +95,7 @@ def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="..
     # Set the fontstyle to Times New Roman
     font = {'family': 'serif', 'weight': 'normal', 'size': 10}
     plt.rc('font', **font)
-    plt.rc('text', usetex=True)
+    # plt.rc('text', usetex=True)
 
     plt.close("all")
 

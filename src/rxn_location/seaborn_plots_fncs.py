@@ -6,7 +6,7 @@ import numpy as np
 import warnings
 import os
 
-import SeabornFig2Grid as sfg
+from . import SeabornFig2Grid as sfg
 
 
 def kde_plots(
@@ -159,7 +159,7 @@ def kde_plots(
     axs1.fig.tight_layout()
 
     if (fig_save):
-        fig_dir = "../figures/seaborn_plots/20230721/"
+        fig_dir = "figures/seaborn_plots/20230721/"
         if not os.path.exists(fig_dir):
             os.makedirs(fig_dir)
         fname = f"{fig_dir}/{x}_vs_{y}_{data_type}_dm_{dark_mode}_20230721.png"
@@ -253,10 +253,10 @@ def seaborn_subplots(
     gs.tight_layout(fig)
     gs.update(top=1, bottom=0.05, left=0.085, right=1, hspace=0.01, wspace=0.22)
     if fig_name is None:
-        fig_name = f"../figures/seaborn_plots/20230721/{keys[0]}_vs_{keys[1]}_dm_{dark_mode}" +\
+        fig_name = f"figures/seaborn_plots/20230721/{keys[0]}_vs_{keys[1]}_dm_{dark_mode}" +\
                    f"_20230721.{fig_format}"
     else:
-        fig_name = f"../figures/seaborn_plots/20230721/{fig_name}_{dark_mode}_20230721.{fig_format}"
+        fig_name = f"figures/seaborn_plots/20230721/{fig_name}_{dark_mode}_20230721.{fig_format}"
     fig.savefig(fig_name, dpi=300, bbox_inches='tight', pad_inches=0.25, format=fig_format)
     print(f"Saved figure to {fig_name} for {keys[0]} vs {keys[1]}")
 

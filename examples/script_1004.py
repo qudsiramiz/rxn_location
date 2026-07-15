@@ -1,9 +1,9 @@
 import datetime
 import pytz
 import pandas as pd
-import jet_reversal_check_function as jrcf
+from rxn_location import jet_reversal_check_function as jrcf
 
-df_crossings = pd.read_csv("../data/brst_intervals.csv", index_col=False)
+df_crossings = pd.read_csv("data/brst_intervals.csv", index_col=False)
 df_crossings.set_index("start_time", inplace=True)
 
 crossing_time_raw = df_crossings.index[1004]

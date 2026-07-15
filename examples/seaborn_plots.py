@@ -4,14 +4,14 @@ from tkinter.tix import Tree
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn_plots_fncs as spf
-import SeabornFig2Grid as sfg
+from rxn_location import seaborn_plots_fncs as spf
+from rxn_location import SeabornFig2Grid as sfg
 
 importlib.reload(spf)
 importlib.reload(sfg)
 
 # Define the data folder and the name of the file
-file_name = "../data/rx_d/reconnection_line_data_mms3_20230721_msh.csv"
+file_name = "data/rx_d/reconnection_line_data_mms3_20230721_msh.csv"
 
 df = pd.read_csv(file_name, index_col=False)
 
@@ -242,7 +242,7 @@ for i, df in enumerate(df_list):
 # Set the vertical spacing between the subplots to zero
 plt.subplots_adjust(hspace=0, wspace=0.1)
 # Save the figure
-plt.savefig(f"../figures/seaborn_plots/20230206/2d_hist_bz_cone_angle_0_{theta_val_max}.pdf",
+plt.savefig(f"figures/seaborn_plots/20230206/2d_hist_bz_cone_angle_0_{theta_val_max}.pdf",
             format="pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 '''

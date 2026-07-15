@@ -71,7 +71,7 @@ ax[3].plot(fgm_time_utc, fgm_b_gse_lmn[:, 2], 'r', label="$B_{n}$")
 ax[3].set_ylabel("B [nT] (GSE, L-M-N)")
 ax[3].legend()
 
-plt.savefig(f"../figures/fgm_data_01.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"figures/fgm_data_01.png", dpi=300, bbox_inches="tight")
 plt.close("all")
 
 data_rate = 'fast'
@@ -156,4 +156,4 @@ ax[2].legend()
 # plt.title(f"MMS{probe} FPI {data_rate} data for "
 #           f"{fpi_time_utc[0].strftime('%Y-%m-%d %H:%M:%S')} to "
 #           f"{fpi_time_utc[-1].strftime('%Y-%m-%d %H:%M:%S')}")
-plt.savefig(f"../figures/fpi_data.png", dpi=300, bbox_inches="tight")
+plt.savefig(f"figures/fpi_data.png", dpi=300, bbox_inches="tight")

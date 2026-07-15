@@ -1,6 +1,7 @@
 import datetime
 import multiprocessing as mp
 import os
+from pathlib import Path
 import warnings
 
 import geopack.geopack as gp
@@ -11,6 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyspedas as spd
+import plotly.graph_objects as go
+import plotly.io as pio
+from plotly.subplots import make_subplots
 from pyspedas.projects import mms
 import scipy as sp
 import trjtrypy as tt
@@ -243,6 +247,9 @@ def ridge_finder_multiple(
     dipole_tilt_angle=None,
     p_dyn=None,
     imf_clock_angle=None,
+    np_imf=None,
+    v_imf=[None, None, None],
+    sym_h=None,
     sigma=[2.2, 2.2, 2.2, 2.2],
     mode="nearest",
     alpha=1.,
@@ -264,7 +271,7 @@ def ridge_finder_multiple(
     tsy_model="t96",
     dark_mode=True,
     rc_file_name="rc_file.csv",
-    rc_folder="../data",
+    rc_folder="data",
     save_rc_file=False,
     fig_version="v001",
     df_jet_reversal=None,
@@ -355,7 +362,7 @@ def ridge_finder_multiple(
     rc_file_name : str, optional
         The name of the file to save the reconnection line data. Default is "rc_file.csv".
     rc_folder : str, optional
-        The folder to save the reconnection line data. Default is "../data".
+        The folder to save the reconnection line data. Default is "data".
     save_rc_file : bool, optional
         Whether to save the reconnection line data. Default is False.
     fig_version : str, optional
@@ -663,14 +670,14 @@ def ridge_finder_multiple(
             text_color = "white"
         else:
             text_color = "black"
-        if i == 0:
-            axs1.text(-0.15, 1.16, f"Model: {tsy_model}", horizontalalignment="left",
+        if i == 1:
+            axs1.text(1.15, 1.12, f"Model: {tsy_model}", horizontalalignment="right",
                       verticalalignment="bottom", transform=axs1.transAxes, rotation=0,
                       color=text_color, fontsize=l_label_size, bbox=box_style)
 
-        if i == 1:
-            axs1.text(1.15, 1.16, f"MMS Position [GSM] - {mms_sc_pos[0], mms_sc_pos[1], mms_sc_pos[2]}",
-                      horizontalalignment="right",
+        if i == 0:
+            axs1.text(-0.18, 1.12, f"MMS Position - [{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}] $R_E$ \n [GSM]",
+                      horizontalalignment="left",
                       verticalalignment="bottom", transform=axs1.transAxes, rotation=0,
                       color=text_color, fontsize=l_label_size, bbox=box_style)
 
@@ -701,12 +708,12 @@ def ridge_finder_multiple(
                              length=tick_len, width=tick_width, labelcolor=label_color)
         # Write the timme range on the plot
         if i == 2:
-            axs1.text(-0.17, -0.1, f"Clock Angle: {np.round(imf_clock_angle, 2)}$^\\circ$",
+            axs1.text(-0.17, -0.1, f"Clock Angle: {imf_clock_angle:.2f}$^\\circ$",
                       horizontalalignment="left", verticalalignment="top", transform=axs1.transAxes,
                       rotation=0, color=text_color, fontsize=l_label_size, bbox=box_style)
         elif i == 3:
             axs1.text(1.17, -0.1,
-                      f"Dipole tilt: {np.round(dipole_tilt_angle * 180/np.pi, 2)} ${{\\hspace{{-.2em}}}}^\\circ$",
+                      f"Dipole tilt: {dipole_tilt_angle * 180 / np.pi:.2f}$^\\circ$",
                       horizontalalignment="right", verticalalignment="top",
                       transform=axs1.transAxes, rotation=0, color=text_color, fontsize=l_label_size,
                       bbox=box_style)
@@ -744,7 +751,7 @@ def ridge_finder_multiple(
         plt.setp(axs1.get_xticklabels(), rotation=0, ha="right", va="top", visible=True)
         plt.setp(axs1.get_yticklabels(), rotation=0, va="center", visible=True)
         # Set the title of the plot
-        fig.suptitle(f"Time range: {t_range[0]} - {t_range[1]} \n $B_{{\\rm {{imf}}}}$ = {b_imf[0], b_imf[1], b_imf[2]}",
+        fig.suptitle(f"Time range: {t_range[0]} - {t_range[1]} \n $B_{{\\rm {{imf}}}}$ = [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT",
                      fontsize=label_size, color=text_color, y=title_y_pos, alpha=0.65)
 
     if save_fig:
@@ -753,23 +760,23 @@ def ridge_finder_multiple(
             # folder. Gives out error if the folder can"t be created.
             temp1 = parser.parse(t_range[1]).strftime("%Y-%m-%d_%H-%M-%S")
             fig_time_range = f"{parser.parse(t_range[0]).strftime('%Y-%m-%d_%H-%M-%S')}_{temp1}"
-            fig_folder = f"../figures/all_ridge_plots/{tsy_model}/{interpolation}" +\
-                         f"_interpolation_mms{mms_probe_num}/{fig_version}"
-            check_folder = os.path.isdir(fig_folder)
-            # If folder doesn"t exist, then create it.
-            if not check_folder:
-                os.makedirs(fig_folder)
+            fig_folder = Path(f"figures/all_ridge_plots/{tsy_model}/{interpolation}"
+                              f"_interpolation_mms{mms_probe_num}/{fig_version}")
+            
+            if not fig_folder.exists():
+                fig_folder.mkdir(parents=True, exist_ok=True)
                 print("created folder : ", fig_folder)
             else:
                 print(f"folder already exists: {fig_folder}\n")
 
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
-            fig_name = f"{fig_folder}/ridge_plot_{fig_time_range}_{bbb}.{fig_format}"
+            fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.{fig_format}"
             plt.savefig(fig_name, bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200)
             print(f"Figure saved as {fig_name}")
         except Exception as e:
             print(e)
-            print("Figure not saved, folder does not exist. Create folder ../figures")
+            print("Figure not saved, folder does not exist. Create folder figures")
+            print("try again")
             # pass
         # plt.close()
     plt.close()
@@ -1170,6 +1177,8 @@ def get_sw_params(
     sw_dict = {}
     sw_dict["time"] = time_imf
     sw_dict["b_imf"] = b_imf
+    sw_dict["v_imf"] = v_imf
+    sw_dict["np"] = np_imf
     sw_dict["rho"] = rho
     sw_dict["ps"] = ps
     sw_dict["p_dyn"] = p_dyn
@@ -1357,7 +1366,7 @@ def rx_model(
     if save_data:
         try:
             today_date = datetime.datetime.today().strftime("%Y-%m-%d")
-            fn = f"../data/all_data_rx_model_{dr}re_{m_p}mp_{model_type}_{today_date}.h5"
+            fn = f"data/all_data_rx_model_{dr}re_{m_p}mp_{model_type}_{today_date}.h5"
             data_file = hf.File(fn, "w")
 
             data_file.create_dataset("bx", data=bx)
@@ -1463,3 +1472,369 @@ def nan_helper(y):
     """
 
     return np.isnan(y), lambda z: z.nonzero()[0]
+
+
+def ridge_finder_multiple_interactive(
+    image=[None, None, None, None],
+    convolution_order=[1, 1, 1, 1],
+    t_range=["2016-12-24 15:08:00", "2016-12-24 15:12:00"],
+    dt=5,
+    b_imf=[-5, 0, 0],
+    b_msh=[-5, 0, 0],
+    v_msh=[-200, 50, 50],
+    xrange=[-15.1, 15],
+    yrange=[-15.1, 15],
+    mms_probe_num="1",
+    mms_sc_pos=[0, 0],
+    dr=0.5,
+    dipole_tilt_angle=None,
+    p_dyn=None,
+    imf_clock_angle=None,
+    np_imf=None,
+    v_imf=[None, None, None],
+    sym_h=None,
+    sigma=[2.2, 2.2, 2.2, 2.2],
+    mode="nearest",
+    alpha=1.,
+    vmin=[None, None, None, None],
+    vmax=[None, None, None, None],
+    cmap_list=["Viridis", "Viridis", "Viridis", "Viridis"],
+    draw_patch=[True, True, True, True],
+    draw_ridge=[True, True, True, True],
+    save_fig=True,
+    fig_name="new",
+    fig_format="html",
+    c_label=[None, None, None, None],
+    wspace=0.1,
+    hspace=0.1,
+    fig_size=(10, 10),
+    box_style=None,
+    title_y_pos=0.95,
+    interpolation="nearest",
+    tsy_model="t96",
+    dark_mode=True,
+    rc_file_name="rc_file.csv",
+    rc_folder="data",
+    save_rc_file=False,
+    fig_version="v001",
+    df_jet_reversal=None,
+):
+    if image is None:
+        raise ValueError("No image given")
+
+    if len(t_range) == 1:
+        if isinstance(t_range[0], datetime.datetime):
+            t_range_date = t_range[0]
+        else:
+            t_range_date = datetime.datetime.strptime(t_range[0], "%Y-%m-%d %H:%M:%S")
+        t_range_date_min = t_range_date - datetime.timedelta(minutes=dt)
+        t_range_date_max = t_range_date + datetime.timedelta(minutes=dt)
+        t_range = [t_range_date_min.strftime("%Y-%m-%d %H:%M:%S"),
+                   t_range_date_max.strftime("%Y-%m-%d %H:%M:%S")]
+
+    # Plotly layout
+    fig = make_subplots(
+        rows=2, cols=3,
+        specs=[[{"type": "xy"}, {"type": "xy"}, {"type": "table"}],
+               [{"type": "xy"}, {"type": "xy"}, {"type": "table"}]],
+        subplot_titles=("(a)", "(b)", "Solar Wind Params", "(c)", "(d)", "Statistics"),
+        horizontal_spacing=wspace,
+        vertical_spacing=hspace,
+        column_widths=[0.38, 0.38, 0.24]
+    )
+
+    dist_rc_list = []
+
+    y_vals = []
+    x_intr_vals_list = []
+    y_intr_vals_list = []
+
+    for i in range(len(image)):
+        image_rotated = np.transpose(image[i])
+        n_rows, n_cols = image_rotated.shape
+        X, Y = np.ogrid[:n_rows, :n_cols]
+        c_row = int(n_rows/2)
+        c_col = int(n_cols/2)
+        dist_pxl = np.sqrt((X - c_row) ** 2 + (Y - c_col) ** 2)
+        mask_image = dist_pxl > xrange[1] / dr
+
+        kwargs = {"sigmas": [sigma[i]], "black_ridges": False, "mode": mode, "alpha": 1}
+        image_smooth = sp.ndimage.gaussian_filter(image_rotated, order=convolution_order[i],
+                                                  sigma=[5, 5], mode=mode)
+        image_smooth_p = sp.ndimage.gaussian_filter(image_rotated, order=0, sigma=[5, 5],
+                                                    mode=mode)
+        result = frangi(image_smooth, **kwargs)
+
+        m_result = result.copy()
+        m_result[mask_image] = np.nan
+        new_image_rotated = image_rotated.copy()
+        new_image_rotated[mask_image] = np.nan
+
+        x_len = image_rotated.shape[0]
+        y_len = image_rotated.shape[1]
+        y_val = np.full(y_len, np.nan)
+        y_vals.append(y_val)
+        im_max_val = np.full(y_len, np.nan)
+        
+        for xx in range(y_len):
+            try:
+                y_val[xx] = np.nanargmax(m_result[:, xx]) * dr + yrange[0]
+                im_max_val[xx] = np.nanargmax(new_image_rotated[:, xx]) * dr + yrange[0]
+            except Exception:
+                pass
+
+        row = (i // 2) + 1
+        col = (i % 2) + 1
+
+        x_grid = np.linspace(xrange[0], xrange[1], x_len)
+        y_grid = np.linspace(yrange[0], yrange[1], y_len)
+
+        # Calculate dynamic colorbar positions to stay right adjacent to the plots
+        # Col 1 domain ends at ~0.27, Col 2 domain ends at ~0.68 (with wspace=0.15)
+        cb_x = 0.275 if col == 1 else 0.69
+        cb_y = 0.78 if row == 1 else 0.22
+
+        # Plotly Heatmap
+        fig.add_trace(
+            go.Heatmap(
+                z=image_smooth_p,
+                x=x_grid,
+                y=y_grid,
+                colorscale=cmap_list[i],
+                showscale=True,
+                colorbar=dict(title=c_label[i] if c_label[i] else "", x=cb_x, y=cb_y, len=0.45, thickness=15)
+            ),
+            row=row, col=col
+        )
+
+        # Add circle outline
+        if draw_patch[i]:
+            fig.add_shape(type="circle",
+                xref=f"x{i+1}", yref=f"y{i+1}",
+                x0=-15, y0=-15, x1=15, y1=15,
+                line=dict(color="gray", width=1)
+            )
+
+        y_val_avg = np.full(len(y_val), np.nan)
+        im_max_val_avg = np.full(len(y_val), np.nan)
+        r_a_l = 5
+        for xx in range(len(y_val)):
+            y_val_avg[xx] = np.nanmean(y_val[max(0, xx - r_a_l):min(len(y_val), xx + r_a_l)])
+            im_max_val_avg[xx] = np.nanmean(im_max_val[max(0, xx - r_a_l):min(len(y_val), xx + r_a_l)])
+
+        if draw_ridge[i]:
+            x_intr_vals = x_grid
+            y_intr_vals = im_max_val_avg
+            fig.add_trace(
+                go.Scatter(
+                    x=x_intr_vals, y=y_intr_vals,
+                    mode="lines",
+                    line=dict(color="aqua", width=2),
+                    showlegend=False
+                ),
+                row=row, col=col
+            )
+
+        r0 = mms_sc_pos[:3]
+
+        fig.add_trace(
+            go.Scatter(
+                x=[r0[1]], y=[r0[2]],
+                mode="markers",
+                marker=dict(symbol="circle-cross", size=15, color="white"),
+                showlegend=False
+            ),
+            row=row, col=col
+        )
+
+        fig.update_xaxes(title_text="Y [GSM, R_E]", range=xrange, row=row, col=col)
+        fig.update_yaxes(title_text="Z [GSM, R_E]", range=yrange, row=row, col=col, scaleanchor=f"x{i+1}", scaleratio=1)
+        
+        # Execute the heavy math to compute distance and directions
+        line_intrp = line_fnc_der(x=x_grid, y=im_max_val_avg)
+
+        curve = np.array([[x_grid[j], im_max_val_avg[j]] for j in range(len(x_grid))])
+        points = np.array([r0[1:]])
+        curves = np.array([curve], dtype=object)
+
+        dist_u = tt.basedists.distance(points, curves, argPnts=True)
+
+        b_msh_dir = b_msh[:3] / np.linalg.norm(b_msh[:3])
+        v_msh_dir = v_msh[:3] / np.linalg.norm(v_msh[:3])
+
+        xn = np.full(300, np.nan)
+        yn = np.full(300, np.nan)
+        for n in range(-150, 150):
+            xn[50 + n] = r0[1] + n / 3 * b_msh_dir[1]
+            yn[50 + n] = r0[2] + n / 3 * b_msh_dir[2]
+
+        yn_interp = line_intrp(xn)
+        dist_rn = np.abs(yn - yn_interp)
+        min_dist_rn_idx = np.argmin(dist_rn)
+        xn_rc = xn[min_dist_rn_idx]
+        yn_rc = yn[min_dist_rn_idx]
+
+        x_intr_vals = [r0[1], xn_rc]
+        y_intr_vals = [r0[2], yn_rc]
+        x_intr_vals_list.append(x_intr_vals)
+        y_intr_vals_list.append(y_intr_vals)
+
+        dist_rc = dist_u[0]["UnsignedDistance"][0]
+        x_y_point = dist_u[0]["ArgminPoints"][0]
+
+        if dist_rc > xrange[1]:
+            dist_rc = np.nan
+        dist_rc_list.append(dist_rc)
+
+        # Plotly Annotations for Arrows
+        fig.add_annotation(
+            x=r0[1] + 5 * b_msh_dir[1], y=r0[2] + 5 * b_msh_dir[2],
+            ax=r0[1], ay=r0[2],
+            xref=f"x{i+1}", yref=f"y{i+1}",
+            axref=f"x{i+1}", ayref=f"y{i+1}",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="red"
+        )
+        
+        fig.add_annotation(
+            x=r0[1] + 5 * v_msh_dir[1], y=r0[2] + 5 * v_msh_dir[2],
+            ax=r0[1], ay=r0[2],
+            xref=f"x{i+1}", yref=f"y{i+1}",
+            axref=f"x{i+1}", ayref=f"y{i+1}",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="blue"
+        )
+
+        if not np.isnan(dist_rc):
+            fig.add_trace(
+                go.Scatter(
+                    x=[r0[1], x_y_point[0]], y=[r0[2], x_y_point[1]],
+                    mode="lines", line=dict(color="white", width=2, dash="dash"),
+                    showlegend=False
+                ),
+                row=row, col=col
+            )
+            # Add text annotation
+            fig.add_annotation(
+                x=r0[1] - 0.5, y=r0[2] + 0.5,
+                xref=f"x{i+1}", yref=f"y{i+1}",
+                text=f"R_rc = {dist_rc:.2f} R_E",
+                showarrow=False,
+                font=dict(color="white", size=13),
+                bgcolor="rgba(0,0,0,0.6)",
+                bordercolor="white",
+                borderwidth=1,
+                xanchor="right", yanchor="bottom"
+            )
+
+        # Plotly lines for axes
+        fig.add_hline(y=0, line_dash="solid", line_color="gray", line_width=0.5, row=row, col=col)
+        fig.add_vline(x=0, line_dash="solid", line_color="gray", line_width=0.5, row=row, col=col)
+
+    # Prepare table data
+    table_headers = ["Parameter", "Value"]
+    
+    table1_cells = [
+        ["Time Range", "MMS Pos [GSM, R_E]", "B_imf [nT]", "P_dyn [nPa]", "Clock Angle", 
+         "Density [cm^-3]", "Velocity [km/s]", "Sym H [nT]"],
+        [f"{t_range[0]}<br>to {t_range[1]}", 
+         f"[{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}]", 
+         f"[{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}]",
+         f"{p_dyn:.2f}" if p_dyn is not None else "N/A",
+         f"{imf_clock_angle:.2f}" if imf_clock_angle is not None else "N/A",
+         f"{np_imf:.2f}" if np_imf is not None else "N/A",
+         f"[{v_imf[0]:.2f}, {v_imf[1]:.2f}, {v_imf[2]:.2f}]" if (v_imf is not None and v_imf[0] is not None) else "N/A",
+         f"{sym_h:.2f}" if sym_h is not None else "N/A"]
+    ]
+    
+    table2_cells = [
+        ["Dist Shear [R_E]", "Dist Rx En [R_E]", "Dist Va Cs [R_E]", "Dist Bisec [R_E]"],
+        [f"{dist_rc_list[0]:.2f}" if (len(dist_rc_list) > 0 and not np.isnan(dist_rc_list[0])) else "N/A",
+         f"{dist_rc_list[1]:.2f}" if (len(dist_rc_list) > 1 and not np.isnan(dist_rc_list[1])) else "N/A",
+         f"{dist_rc_list[2]:.2f}" if (len(dist_rc_list) > 2 and not np.isnan(dist_rc_list[2])) else "N/A",
+         f"{dist_rc_list[3]:.2f}" if (len(dist_rc_list) > 3 and not np.isnan(dist_rc_list[3])) else "N/A"]
+    ]
+    
+    fig.add_trace(
+        go.Table(
+            header=dict(values=table_headers, align="left"),
+            cells=dict(values=table1_cells, align="left", height=30)
+        ),
+        row=1, col=3
+    )
+
+    fig.add_trace(
+        go.Table(
+            header=dict(values=table_headers, align="left"),
+            cells=dict(values=table2_cells, align="left", height=30)
+        ),
+        row=2, col=3
+    )
+
+    # Define toggle button based on initial dark_mode
+    if dark_mode:
+        initial_label = "🌙"
+        args1 = [{"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}]
+        args2 = [{"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}]
+    else:
+        initial_label = "☀️"
+        args1 = [{"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}]
+        args2 = [{"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}]
+        
+    num_traces = len(fig.data)
+    visible_without_table = [True] * (num_traces - 2) + [False, False]
+    visible_with_table = [True] * num_traces
+
+    # Update layout for interactive plot
+    fig.update_layout(
+        title=f"Time range: {t_range[0]} - {t_range[1]}<br>B_imf = [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT",
+        template="plotly_dark" if dark_mode else "plotly_white",
+        autosize=True,
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="left",
+                buttons=list([
+                    dict(args=args1, args2=args2, label=initial_label, method="relayout")
+                ]),
+                pad={"r": 10, "t": 10},
+                showactive=False,
+                x=1.0,
+                xanchor="right",
+                y=1.15,
+                yanchor="top"
+            ),
+            dict(
+                type="buttons",
+                direction="left",
+                buttons=list([
+                    dict(args=[{"visible": [False]}, {"updatemenus[1].buttons[0].label": "☐ Show Table"}, [num_traces - 2, num_traces - 1]], 
+                         args2=[{"visible": [True]}, {"updatemenus[1].buttons[0].label": "☑ Show Table"}, [num_traces - 2, num_traces - 1]], 
+                         label="☑ Show Table", method="update")
+                ]),
+                pad={"r": 10, "t": 10},
+                showactive=False,
+                x=0.9,
+                xanchor="right",
+                y=1.15,
+                yanchor="top"
+            ),
+        ]
+    )
+
+    if save_fig:
+        try:
+            temp1 = parser.parse(t_range[1]).strftime("%Y-%m-%d_%H-%M-%S")
+            fig_time_range = f"{parser.parse(t_range[0]).strftime('%Y-%m-%d_%H-%M-%S')}_{temp1}"
+            fig_folder = Path(f"interactive_figures/all_ridge_plots/{tsy_model}/{interpolation}"
+                              f"_interpolation_mms{mms_probe_num}/{fig_version}")
+            
+            if not fig_folder.exists():
+                fig_folder.mkdir(parents=True, exist_ok=True)
+            
+            bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
+            fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.html"
+            fig.write_html(str(fig_name), default_width="100%", default_height="100%")
+            print(f"Interactive figure saved as {fig_name}")
+        except Exception as e:
+            print(e)
+            
+    return y_vals, x_intr_vals_list, y_intr_vals_list

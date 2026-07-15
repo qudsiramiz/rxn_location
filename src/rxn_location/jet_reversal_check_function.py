@@ -15,8 +15,8 @@ import pytz
 def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', level='l2',
                        coord_type='lmn', data_type='dis-moms', time_clip=True, latest_version=False,
                        jet_len=5, figname='mms_jet_reversal_check', date_obs=None,
-                       fname='../data/mms_jet_reversal_times.csv',
-                       error_file_log_name="../data/mms_jet_reversal_check_error_log.csv",
+                       fname='data/mms_jet_reversal_times.csv',
+                       error_file_log_name="data/mms_jet_reversal_check_error_log.csv",
                        verbose=True
                        ):
     """
@@ -56,7 +56,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         The name of the csv file to save the data to. Default is 'mms_jet_reversal_times.csv'.
     error_file_log_name : str
         The name of the csv file to save the error log to. Default is
-        '../data/mms_jet_reversal_check_error_log.csv'.
+        'data/mms_jet_reversal_check_error_log.csv'.
     verbose : bool
         Whether or not to print the status of the function. Default is True.
 
@@ -79,7 +79,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
     trange = [crossing_time_min, crossing_time_max]
 
     # Get the index corresponding to the crossing time in the data
-    df_crossing_temp = pd.read_csv("../data/brst_intervals.csv", index_col=False)
+    df_crossing_temp = pd.read_csv("data/brst_intervals.csv", index_col=False)
     df_crossing_temp['start_time'] = pd.to_datetime(df_crossing_temp['start_time'])
     ind_crossing = np.where(df_crossing_temp['start_time'] == crossing_time)[0][0]
     print("Crossing index:", ind_crossing)
@@ -702,11 +702,11 @@ def check_jet_location(df_mms=None, jet_len=3, time_cadence_median=0.15, v_thres
     if jet_detection:
         plt.text(0.05, 0.95, ind_crossing, horizontalalignment='left',
                  verticalalignment='top', transform=plt.gca().transAxes, color='g')
-        save_folder = f"../figures/jet_reversal_checks/check_{date_obs}/delta_v/jet/"
+        save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/jet/"
     else:
         plt.text(0.05, 0.95, ind_crossing, horizontalalignment='left',
                  verticalalignment='top', transform=plt.gca().transAxes, color='r')
-        save_folder = f"../figures/jet_reversal_checks/check_{date_obs}/delta_v/no_jet/"
+        save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/no_jet/"
 
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
@@ -1003,12 +1003,12 @@ def tplot_fnc(probe=3, data_rate='brst', level='l2', df_mms=None, ind_range_msp=
     spd.options('delta_v_vp_lmn_diff_l' if jet_detection else 'vp_lmn_diff_l', opt_dict=delta_v_dict_option)
 
     if jet_detection:
-        folder_name = f"../figures/jet_reversal_checks/check_{date_obs}/{data_rate}/jet"
+        folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/jet"
         # If the folder doesn't exist, create it
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
     else:
-        folder_name = f"../figures/jet_reversal_checks/check_{date_obs}/{data_rate}/no_jet"
+        folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/no_jet"
         # If the folder doesn't exist, create it
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)

@@ -3,11 +3,11 @@ import glob
 import numpy as np
 import pandas as pd
 
-import rc_stats_fncs as rcsf
+from rxn_location import rc_stats_fncs as rcsf
 importlib.reload(rcsf)
 
 # Define the data folder and the name of the file
-data_folder = '../data/rx_d'
+data_folder = 'data/rx_d'
 fnames = np.sort(glob.glob(f"{data_folder}/reconnection_line_data_mms3_20230721_msh.csv"))
 
 cut_type_list = ["bz_neg", "bz_pos", 'bz', 'cone_angle', 'cone_and_bz_neg']
@@ -21,7 +21,7 @@ for file_name in fnames:
             'dark_mode': dark_mode,
             'fig_name':  f"rx_hist_{mms_probe_num}_{dark_mode}",
             'fig_format': 'pdf',
-            'fig_folder': '../figures/rx_hist/rx_hist_v001',
+            'fig_folder': 'figures/rx_hist/rx_hist_v001',
             'fig_size': (8, 8),
             'histtype': 'step',
             'linewidth': 3,

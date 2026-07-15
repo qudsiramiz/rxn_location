@@ -7,12 +7,12 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 import pandas as pd
 import pytz
 
-import jet_reversal_check_function as jrcf
+from rxn_location import jet_reversal_check_function as jrcf
 
 importlib.reload(jrcf)
 
 # Read the data from csv files
-df_crossings = pd.read_csv("../data/brst_intervals.csv", index_col=False)
+df_crossings = pd.read_csv("data/brst_intervals.csv", index_col=False)
 
 # Set the index to the date column
 df_crossings.set_index("start_time", inplace=True)
@@ -39,8 +39,8 @@ def check_jet_reversal(crossing_time):
               "latest_version": False,
               "date_obs": date_obs,
               "figname": "mms_jet_reversal_check_lmn_mean",
-              "fname": f"../data/mms_jet_reversal_times_list_{date_obs}_brst.csv",
-              "error_file_log_name": f"../data/mms_jet_reversal_check_err_log_{date_obs}.csv",
+              "fname": f"data/mms_jet_reversal_times_list_{date_obs}_brst.csv",
+              "error_file_log_name": f"data/mms_jet_reversal_check_err_log_{date_obs}.csv",
               "verbose": True
               }
 

@@ -14,10 +14,11 @@ fig.update_layout(
                     args=[{"visible": [False]}, {"updatemenus[0].buttons[0].label": "☐"}, [1]],
                     args2=[{"visible": [True]}, {"updatemenus[0].buttons[0].label": "☑"}, [1]],
                     label="☑",
-                    method="update"
+                    method="update",
                 )
             ],
-            x=1, y=1
+            x=1,
+            y=1,
         )
     ]
 )

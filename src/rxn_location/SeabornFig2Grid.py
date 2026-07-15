@@ -4,21 +4,22 @@ import seaborn as sns
 import numpy as np
 
 
-class SeabornFig2Grid():
+class SeabornFig2Grid:
 
-    def __init__(self, seaborngrid, fig,  subplot_spec):
+    def __init__(self, seaborngrid, fig, subplot_spec):
         self.fig = fig
         self.sg = seaborngrid
         self.subplot = subplot_spec
-        if isinstance(self.sg, sns.axisgrid.FacetGrid) or \
-           isinstance(self.sg, sns.axisgrid.PairGrid):
+        if isinstance(self.sg, sns.axisgrid.FacetGrid) or isinstance(
+            self.sg, sns.axisgrid.PairGrid
+        ):
             self._movegrid()
         elif isinstance(self.sg, sns.axisgrid.JointGrid):
             self._movejointgrid()
         self._finalize()
 
     def _movegrid(self):
-        """ Move PairGrid or Facetgrid """
+        """Move PairGrid or Facetgrid"""
         self._resize()
         n = self.sg.axes.shape[0]
         m = self.sg.axes.shape[1]
@@ -28,12 +29,12 @@ class SeabornFig2Grid():
                 self._moveaxes(self.sg.axes[i, j], self.subgrid[i, j])
 
     def _movejointgrid(self):
-        """ Move Jointgrid """
+        """Move Jointgrid"""
         h = self.sg.ax_joint.get_position().height
         h2 = self.sg.ax_marg_x.get_position().height
-        r = int(np.round(h/h2))
+        r = int(np.round(h / h2))
         self._resize()
-        self.subgrid = gridspec.GridSpecFromSubplotSpec(r+1, r+1, subplot_spec=self.subplot)
+        self.subgrid = gridspec.GridSpecFromSubplotSpec(r + 1, r + 1, subplot_spec=self.subplot)
 
         self._moveaxes(self.sg.ax_joint, self.subgrid[1:, :-1])
         self._moveaxes(self.sg.ax_marg_x, self.subgrid[0, :-1])

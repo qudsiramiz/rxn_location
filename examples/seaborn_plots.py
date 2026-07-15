@@ -27,14 +27,10 @@ df_bisec_imfz = df_bisec[df_bisec["b_imf_z"] < 0]
 
 # If clock angle is greater than 180, then subtract 360 to get the angle
 # between the IMF and the Bz field.
-df_shear["imf_clock_angle"] = df_shear["imf_clock_angle"].apply(
-    lambda x: 360 - x if x > 180 else x)
-df_rx_en["imf_clock_angle"] = df_rx_en["imf_clock_angle"].apply(
-    lambda x: 360 - x if x > 180 else x)
-df_va_cs["imf_clock_angle"] = df_va_cs["imf_clock_angle"].apply(
-    lambda x: 360 - x if x > 180 else x)
-df_bisec["imf_clock_angle"] = df_bisec["imf_clock_angle"].apply(
-    lambda x: 360 - x if x > 180 else x)
+df_shear["imf_clock_angle"] = df_shear["imf_clock_angle"].apply(lambda x: 360 - x if x > 180 else x)
+df_rx_en["imf_clock_angle"] = df_rx_en["imf_clock_angle"].apply(lambda x: 360 - x if x > 180 else x)
+df_va_cs["imf_clock_angle"] = df_va_cs["imf_clock_angle"].apply(lambda x: 360 - x if x > 180 else x)
+df_bisec["imf_clock_angle"] = df_bisec["imf_clock_angle"].apply(lambda x: 360 - x if x > 180 else x)
 
 # Define the mass of proton in kg
 m_p = 1.6726219e-27
@@ -46,8 +42,13 @@ mu_0 = 4 * np.pi * 1e-7
 k_B = 1.38064852e-23
 
 # Compute the cone angle
-cone_angle = np.arccos(df_shear.b_imf_x / np.sqrt(
-                       df_shear.b_imf_x**2 + df_shear.b_imf_y**2+ df_shear.b_imf_z**2)) * 180 / np.pi
+cone_angle = (
+    np.arccos(
+        df_shear.b_imf_x / np.sqrt(df_shear.b_imf_x**2 + df_shear.b_imf_y**2 + df_shear.b_imf_z**2)
+    )
+    * 180
+    / np.pi
+)
 
 # Compute the ratio of b_imf_y to the magnitude of b_imf
 bb = df_shear.b_imf_y / np.sqrt(df_shear.b_imf_x**2 + df_shear.b_imf_y**2 + df_shear.b_imf_z**2)
@@ -58,47 +59,66 @@ for dfn in df_list:
     dfn["bb"] = bb.values
 
 label = ["Shear", "Rx En", "Va Cs", "Bisec"]
-key_list = ["b_imf_z", "b_imf_x", "b_imf_y", "imf_clock_angle", "beta_msh_mean", "np_msp_median",
-            "tp_para_msp_median", "tp_perp_msp_median", "msh_msp_shear", "cone_angle",
-            "delta_beta", "bb"]
-key2_list = ["IMF $B_{\\rm z}$ [nT]", "IMF $B_{\\rm x}$ (nT)", "IMF $B_{\\rm y}$ [nT]",
-             "IMF Clock Angle (${~}^{0}$)", "$\\beta_{\\rm p}$", "$N_p$ (MSP) (cm$^{-3}$)",
-             "$Tp_{\parallel} (10^6 K)$", "$Tp_{\perp} (10^6 K)$", "Shear Angle (${~}^{0}$)",
-             "Cone Angle ($\\cos^{-1}\\left(B_{\\rm x}/|\\mathbf{B}|\\right)$) [${~}^{0}$]",
-             "$\Delta \\beta$", "IMF $B_{\\rm y}/|\\mathbf{B}|$"]
+key_list = [
+    "b_imf_z",
+    "b_imf_x",
+    "b_imf_y",
+    "imf_clock_angle",
+    "beta_msh_mean",
+    "np_msp_median",
+    "tp_para_msp_median",
+    "tp_perp_msp_median",
+    "msh_msp_shear",
+    "cone_angle",
+    "delta_beta",
+    "bb",
+]
+key2_list = [
+    "IMF $B_{\\rm z}$ [nT]",
+    "IMF $B_{\\rm x}$ (nT)",
+    "IMF $B_{\\rm y}$ [nT]",
+    "IMF Clock Angle (${~}^{0}$)",
+    "$\\beta_{\\rm p}$",
+    "$N_p$ (MSP) (cm$^{-3}$)",
+    "$Tp_{\parallel} (10^6 K)$",
+    "$Tp_{\perp} (10^6 K)$",
+    "Shear Angle (${~}^{0}$)",
+    "Cone Angle ($\\cos^{-1}\\left(B_{\\rm x}/|\\mathbf{B}|\\right)$) [${~}^{0}$]",
+    "$\Delta \\beta$",
+    "IMF $B_{\\rm y}/|\\mathbf{B}|$",
+]
 
 
 x_scale_list = [False, False, False, False, False, False, False, False, True, False, False, False]
 y_scale_list = [False, False, False, False, True, True, True, True, False, False, True, False]
 
-color_list = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+color_list = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
 dark_mode = False
 
 if dark_mode:
-    plt.style.use('dark_background')
-    tick_color = 'w'  # color of the tick lines
-    mtick_color = 'w'  # color of the minor tick lines
-    label_color = 'w'  # color of the tick labels
-    clabel_color = 'w'  # color of the colorbar label
+    plt.style.use("dark_background")
+    tick_color = "w"  # color of the tick lines
+    mtick_color = "w"  # color of the minor tick lines
+    label_color = "w"  # color of the tick labels
+    clabel_color = "w"  # color of the colorbar label
 else:
-    plt.style.use('default')
-    tick_color = 'k'  # color of the tick lines
-    mtick_color = 'k'  # color of the minor tick lines
-    label_color = 'k'  # color of the tick labels
-    clabel_color = 'k'  # color of the colorbar label
+    plt.style.use("default")
+    tick_color = "k"  # color of the tick lines
+    mtick_color = "k"  # color of the minor tick lines
+    label_color = "k"  # color of the tick labels
+    clabel_color = "k"  # color of the colorbar label
 
 # Set the fontstyle to Times New Roman
-font = {'family': 'serif', 'weight': 'normal', 'size': 10}
-plt.rc('font', **font)
-plt.rc('text', usetex=True)
+font = {"family": "serif", "weight": "normal", "size": 10}
+plt.rc("font", **font)
+plt.rc("text", usetex=True)
 
 label_fontsize = 15
 tick_fontsize = 12
 data_type = ["Shear", "Reconnection-Energy", "Exhaust-Velocity", "Bisection"]
 
 
-
-'''
+"""
 ind1 = 0
 ind2 = 1
 
@@ -118,10 +138,10 @@ for i, (key, key2) in enumerate(zip(key_list[ind1:ind2], key2_list[ind1:ind2])):
                                         x_log_scale=x_scale_list[i], y_log_scale=y_scale_list[i],
                                         fig_name=None, fig_format="pdf", nbins=[40, 40],
                                         dark_mode=dark_mode)
-'''
+"""
 
 
-'''
+"""
 # plt.show()
 plt.close('all')
 
@@ -131,30 +151,60 @@ for i, df in enumerate(df_list):
                   marker_size=20*df.r_rc.values, alpha=0.7, color=color_list[i],
                   data_type=data_type[i], x_label=r"$B_{\rm x}$ [nT]", y_label=r"$B_{\rm z}$ [nT]")
 
-'''
+"""
 
 ind1 = 2
 ind2 = 3
 var_marker_size = True
 
-key_list = ["b_imf_z", "b_imf_x", "b_imf_y", "imf_clock_angle", "beta_msh_mean", "np_msp_median",
-            "tp_para_msp_median", "tp_perp_msp_median", "msh_msp_shear", "cone_angle",
-            "delta_beta", "bb"]
-key2_list = ["IMF $B_{\\rm z}$ [nT]", "IMF $B_{\\rm x}$ (nT)", "IMF $B_{\\rm y}$ [nT]",
-             "IMF Clock Angle (${~}^{0}$)", "$\\beta_{\\rm p}$", "$N_p$ (MSP) (cm$^{-3}$)",
-             "$Tp_{\parallel} (10^6 K)$", "$Tp_{\perp} (10^6 K)$", "Shear Angle (${~}^{0}$)",
-             "Cone Angle ($\\cos^{-1}\\left(B_{\\rm x}/|\\mathbf{B}|\\right)$) [${~}^{0}$]",
-             "$\Delta \\beta$", "IMF $B_{\\rm y}/|\\mathbf{B}|$"]
+key_list = [
+    "b_imf_z",
+    "b_imf_x",
+    "b_imf_y",
+    "imf_clock_angle",
+    "beta_msh_mean",
+    "np_msp_median",
+    "tp_para_msp_median",
+    "tp_perp_msp_median",
+    "msh_msp_shear",
+    "cone_angle",
+    "delta_beta",
+    "bb",
+]
+key2_list = [
+    "IMF $B_{\\rm z}$ [nT]",
+    "IMF $B_{\\rm x}$ (nT)",
+    "IMF $B_{\\rm y}$ [nT]",
+    "IMF Clock Angle (${~}^{0}$)",
+    "$\\beta_{\\rm p}$",
+    "$N_p$ (MSP) (cm$^{-3}$)",
+    "$Tp_{\parallel} (10^6 K)$",
+    "$Tp_{\perp} (10^6 K)$",
+    "Shear Angle (${~}^{0}$)",
+    "Cone Angle ($\\cos^{-1}\\left(B_{\\rm x}/|\\mathbf{B}|\\right)$) [${~}^{0}$]",
+    "$\Delta \\beta$",
+    "IMF $B_{\\rm y}/|\\mathbf{B}|$",
+]
 
 for i, (key, key2) in enumerate(zip(key_list[ind1:ind2], key2_list[ind1:ind2])):
-    axs_list = spf.seaborn_subplots(df_list=df_list, keys=["b_imf_z", key],
-                                    labels=[r"IMF $B_{\rm z}$ [nT]", key2],
-                                    x_lim=[-8, 8], y_lim=[-10, 10],
-                                    data_type=data_type, color_list=color_list, log_scale=False,
-                                    x_log_scale=x_scale_list[i], y_log_scale=y_scale_list[i],
-                                    fig_name=None, fig_format="pdf", nbins=[40, 40],
-                                    dark_mode=dark_mode, var_marker_size=var_marker_size,)
-'''
+    axs_list = spf.seaborn_subplots(
+        df_list=df_list,
+        keys=["b_imf_z", key],
+        labels=[r"IMF $B_{\rm z}$ [nT]", key2],
+        x_lim=[-8, 8],
+        y_lim=[-10, 10],
+        data_type=data_type,
+        color_list=color_list,
+        log_scale=False,
+        x_log_scale=x_scale_list[i],
+        y_log_scale=y_scale_list[i],
+        fig_name=None,
+        fig_format="pdf",
+        nbins=[40, 40],
+        dark_mode=dark_mode,
+        var_marker_size=var_marker_size,
+    )
+"""
 
 
 # Make a 2d histogram between 'b_imf_z' and 'cone_angle' with 40 bins in each direction and 'r_rc'
@@ -245,4 +295,4 @@ plt.subplots_adjust(hspace=0, wspace=0.1)
 plt.savefig(f"figures/seaborn_plots/20230206/2d_hist_bz_cone_angle_0_{theta_val_max}.pdf",
             format="pdf", dpi=300, bbox_inches='tight', pad_inches=0.1)
 
-'''
+"""

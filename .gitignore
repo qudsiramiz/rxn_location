@@ -139,3 +139,4 @@ dmypy.json
 # Ignore hdf files
 *.hdf
 *.h5
+pyrightconfig.json

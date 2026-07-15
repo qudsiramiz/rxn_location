@@ -27,9 +27,21 @@ label_pad = 5  # padding between label and axis
 
 def convert_wide_to_long(df):
     """
-    Converts the new wide-format CSV (one row per crossing, with r_rc_shear, r_rc_rx_en, etc.) 
-    back into the legacy long-format (multiple rows, method_used and r_rc columns) 
-    so existing plotting code works seamlessly.
+    Converts the new wide-format CSV into the legacy long-format for plotting compatibility.
+
+    This ensures that existing plotting code works seamlessly by melting the DataFrame so that 
+    each crossing is represented across multiple rows based on the theoretical models (shear, rx_en, etc.).
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The input DataFrame, which can be in either wide or long format.
+
+    Returns
+    -------
+    df_long : pandas.DataFrame
+        The output DataFrame converted to long format. If the input is already in long format, 
+        it is returned unmodified.
     """
     rc_cols = [col for col in df.columns if col.startswith('r_rc_')]
     
@@ -46,8 +58,17 @@ def convert_wide_to_long(df):
             value_name='r_rc'
         )
         
-        # Clean up the method_used column (e.g., 'r_rc_shear' -> 'shear')
+        # Clean up the method_used column
         df_long['method_used'] = df_long['method_used'].str.replace('r_rc_', '')
+        
+        # Map readable names back to internal abbreviations for backward compatibility
+        name_map = {
+            "Shear": "shear",
+            "Bisection Field": "bisection",
+            "Reconnection Energy": "rx_en",
+            "Exhaust Velocity": "va_cs"
+        }
+        df_long['method_used'] = df_long['method_used'].replace(name_map)
         
         return df_long
     else:
@@ -57,7 +78,51 @@ def convert_wide_to_long(df):
 def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="figures",
               fig_name="new", fig_format="pdf", histtype="step", linewidth=1, cut_type="jet",
               r_lim=[0, 15], density=False, return_fig=False):
+    """
+    Generate histograms of reconnection location parameters.
 
+    Parameters
+    ----------
+    file_name : str
+        Path to the CSV file containing the data.
+    fig_size : tuple, optional
+        Figure size as (width, height). Default is (6, 6).
+    dark_mode : bool, optional
+        If True, applies a dark mode theme to the plot. Default is True.
+    bins : int, optional
+        Number of bins for the histogram. Default is 8.
+    fig_folder : str, optional
+        Directory where the figure will be saved. Default is "figures".
+    fig_name : str, optional
+        Base name of the saved figure. Default is "new".
+    fig_format : str, optional
+        Format of the saved figure (e.g., 'pdf', 'png'). Default is "pdf".
+    histtype : str, optional
+        Type of histogram to draw (e.g., 'step', 'bar'). Default is "step".
+    linewidth : int, optional
+        Width of the histogram lines. Default is 1.
+    cut_type : str, optional
+        Data filtering criteria (e.g., 'jet', 'bz_neg', 'bz_pos'). Default is "jet".
+    r_lim : list of float, optional
+        Limits for the x-axis representing the r_rc parameter. Default is [0, 15].
+    density : bool, optional
+        If True, plot a probability density rather than counts. Default is False.
+    return_fig : bool, optional
+        If True, returns the matplotlib Figure object along with the dataframes. Default is False.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure (optional)
+        The generated figure object, only returned if `return_fig` is True.
+    df_shear : pandas.DataFrame
+        Data frame containing data filtered by the shear model.
+    df_rx_en : pandas.DataFrame
+        Data frame containing data filtered by the reconnection energy model.
+    df_va_cs : pandas.DataFrame
+        Data frame containing data filtered by the exhaust velocity model.
+    df_bisec : pandas.DataFrame
+        Data frame containing data filtered by the bisection model.
+    """
     df = pd.read_csv(file_name, index_col=False)
     df = convert_wide_to_long(df)
 

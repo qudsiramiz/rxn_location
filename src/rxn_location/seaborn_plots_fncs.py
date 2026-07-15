@@ -36,6 +36,67 @@ def kde_plots(
               var_marker_size=False,
               return_fig=False,
               ):
+    """
+    Generate a seaborn jointplot with KDE marginals for two variables.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame, optional
+        Dataframe containing the data to plot.
+    x : str, optional
+        Name of the variable in `df` to plot on the x-axis.
+    y : str, optional
+        Name of the variable in `df` to plot on the y-axis.
+    x_label : str, optional
+        Label for the x-axis. Default is an empty string.
+    y_label : str, optional
+        Label for the y-axis. Default is an empty string.
+    data_type : str, optional
+        String indicating the data type/model for labeling purposes. Default is an empty string.
+    log_scale : bool, optional
+        If True, filter out non-positive values for logarithmic plotting. Default is True.
+    x_log_scale : bool, optional
+        If True, use a log scale for the x-axis marginal plot. Default is False.
+    y_log_scale : bool, optional
+        If True, use a log scale for the y-axis marginal plot. Default is False.
+    xlim : list of float, optional
+        Limits for the x-axis. Default is [0, 2e1].
+    ylim : list of float, optional
+        Limits for the y-axis. Default is [1e-1, 2e2].
+    color : str, optional
+        Color of the scatter points and histograms. Default is "blue".
+    marker_size : int or array-like, optional
+        Size of the scatter plot markers. Default is 20.
+    spearman : float, optional
+        Spearman correlation coefficient to display on the plot. Default is None.
+    pearson : float, optional
+        Pearson correlation coefficient to display on the plot. Default is None.
+    fig_save : bool, optional
+        If True, save the generated figure to disk. Default is True.
+    hue_norm : matplotlib.colors.Normalize, optional
+        Normalization for the colormap. Default is matplotlib.colors.LogNorm().
+    height : int, optional
+        Height of the jointplot figure. Default is 8.
+    ratio : int, optional
+        Ratio of joint axes size to marginal axes size. Default is 8.
+    space : float, optional
+        Space between the joint and marginal axes. Default is 0.
+    alpha : float, optional
+        Transparency of the scatter points. Default is 0.7.
+    bins : list of int, optional
+        Number of bins for the x and y marginal histograms as [x_bins, y_bins]. Default is [20, 20].
+    dark_mode : bool, optional
+        If True, applies a dark mode theme to the plot. Default is True.
+    var_marker_size : bool, optional
+        If True, display concentric circles indicating marker size scale. Default is False.
+    return_fig : bool, optional
+        If True, return the JointGrid object. Default is False.
+
+    Returns
+    -------
+    axs1 : seaborn.axisgrid.JointGrid
+        The generated seaborn JointGrid object.
+    """
 
     pad = 5
     labelsize = 35
@@ -190,6 +251,53 @@ def seaborn_subplots(
                      var_marker_size=True,
                      return_fig=False,
                      ):
+    """
+    Generate multiple seaborn jointplots arranged in a grid for a list of dataframes.
+
+    Parameters
+    ----------
+    df_list : list of pandas.DataFrame, optional
+        List of dataframes containing the data to plot.
+    keys : list of str, optional
+        List containing the x and y column names to plot.
+    figsize : tuple, optional
+        Figure size as (width, height). Default is (16, 16).
+    labels : list of str, optional
+        Labels for the x and y axes.
+    data_type : list of str, optional
+        List of strings indicating the model type for each subplot.
+    color_list : list of str, optional
+        List of colors for each subplot.
+    y_log_scale : bool, optional
+        If True, use a log scale for the y-axis. Default is False.
+    x_log_scale : bool, optional
+        If True, use a log scale for the x-axis. Default is False.
+    log_scale : bool, optional
+        If True, apply general logarithmic scaling constraints. Default is True.
+    fig_name : str, optional
+        Base name for saving the figure. Default is None.
+    fig_format : str, optional
+        Format of the saved figure (e.g., 'pdf', 'png'). Default is "png".
+    bins : list of array-like, optional
+        Specific bin edges for the histograms. Default is None.
+    nbins : list of int, optional
+        Number of bins for the x and y marginal histograms as [x_bins, y_bins]. Default is [20, 20].
+    x_lim : tuple or list, optional
+        Limits for the x-axis. Default is None (auto-calculated).
+    y_lim : tuple or list, optional
+        Limits for the y-axis. Default is None (auto-calculated).
+    dark_mode : bool, optional
+        If True, applies a dark mode theme to the plot. Default is False.
+    var_marker_size : bool, optional
+        If True, use variable marker sizes. Default is True.
+    return_fig : bool, optional
+        If True, return the final matplotlib figure object. Default is False.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure (optional)
+        The generated figure object containing the subplots, returned if `return_fig` is True.
+    """
 
     axs_list = []
     

@@ -24,8 +24,9 @@ start = time.time()
 
 today_date = datetime.datetime.today().strftime("%Y-%m-%d")
 
-df_jet_reversal = pd.read_csv("../data/mms_jet_reversal_times_list_20260714_brst.csv",
-                              index_col=False)
+df_jet_reversal = pd.read_csv(
+    "../data/mms_jet_reversal_times_list_20260714_brst.csv", index_col=False
+)
 # If any column has NaN, drop that row
 df_jet_reversal = df_jet_reversal.dropna()
 
@@ -52,6 +53,7 @@ mms_probe_num_list = [1, 2, 3, 4]
 ind_min = 0
 ind_max = 1
 
+
 @contextmanager
 def suppress_stdout_stderr():
     """A context manager that redirects stdout and stderr to devnull"""
@@ -68,13 +70,13 @@ for mms_probe_num in mms_probe_num_list[2:3]:
 
         print(f"\033[92m \n Started process for Figure number {ind_range} \033[0m \n")
         # with suppress_stdout_stderr():
-            # try:
+        # try:
         mms_probe_num = str(mms_probe_num)
         min_max_val = 20
         dr = 0.25
-        y_min = - min_max_val
+        y_min = -min_max_val
         y_max = min_max_val
-        z_min = - min_max_val
+        z_min = -min_max_val
         z_max = min_max_val
         model_type = "t96"
 
@@ -94,17 +96,34 @@ for mms_probe_num in mms_probe_num_list[2:3]:
             "save_data": False,
             "nprocesses": None,
         }
-        (bx, by, bz, shear, rx_en, va_cs, bisec_msp, bisec_msh, sw_params, x_shu, y_shu,
-            z_shu, b_msx, b_msy, b_msz) = rmf.rx_model(**model_inputs)
+        (
+            bx,
+            by,
+            bz,
+            shear,
+            rx_en,
+            va_cs,
+            bisec_msp,
+            bisec_msh,
+            sw_params,
+            x_shu,
+            y_shu,
+            z_shu,
+            b_msx,
+            b_msy,
+            b_msz,
+        ) = rmf.rx_model(**model_inputs)
 
         # Normalize each quantity to the range [0, 1]
         shear_norm = (shear - np.nanmin(shear)) / (np.nanmax(shear) - np.nanmin(shear))
         rx_en_norm = (rx_en - np.nanmin(rx_en)) / (np.nanmax(rx_en) - np.nanmin(rx_en))
         va_cs_norm = (va_cs - np.nanmin(va_cs)) / (np.nanmax(va_cs) - np.nanmin(va_cs))
-        bisec_msp_norm = (bisec_msp - np.nanmin(bisec_msp)) / (np.nanmax(bisec_msp) -
-                                                                np.nanmin(bisec_msp))
-        bisec_msh_norm = (bisec_msh - np.nanmin(bisec_msh)) / (np.nanmax(bisec_msh) -
-                                                                np.nanmin(bisec_msh))
+        bisec_msp_norm = (bisec_msp - np.nanmin(bisec_msp)) / (
+            np.nanmax(bisec_msp) - np.nanmin(bisec_msp)
+        )
+        bisec_msh_norm = (bisec_msh - np.nanmin(bisec_msh)) / (
+            np.nanmax(bisec_msh) - np.nanmin(bisec_msh)
+        )
 
         figure_inputs = {
             "image": [shear_norm, rx_en_norm, va_cs_norm, bisec_msp_norm],
@@ -134,8 +153,7 @@ for mms_probe_num in mms_probe_num_list[2:3]:
             "save_fig": True,
             "fig_name": "crossing_all_ridge_plots",
             "fig_format": "png",
-            "c_label": ["Shear", "Reconnection Energy", "Exhaust Velocity",
-                        "Bisection Field"],
+            "c_label": ["Shear", "Reconnection Energy", "Exhaust Velocity", "Bisection Field"],
             "wspace": 0.15,
             "hspace": 0.17,
             "fig_size": (8.775, 10),
@@ -153,18 +171,21 @@ for mms_probe_num in mms_probe_num_list[2:3]:
         # Save the figure_inputs so the user can easily replot the image without re-running the physics model
         with open(f"data/rx_d/plot_inputs_mms{mms_probe_num}_{ind_range}.pkl", "wb") as f:
             pickle.dump(figure_inputs, f)
-            print(f"Saved figure inputs to data/rx_d/plot_inputs_mms{mms_probe_num}_{ind_range}.pkl for fast replotting.")
+            print(
+                f"Saved figure inputs to data/rx_d/plot_inputs_mms{mms_probe_num}_{ind_range}.pkl for fast replotting."
+            )
 
-        y_vals, x_intr_vals_list, y_intr_vals_list = rmf.ridge_finder_multiple(
-                                                    **figure_inputs)
-        
+        y_vals, x_intr_vals_list, y_intr_vals_list = rmf.ridge_finder_multiple(**figure_inputs)
+
         # Also generate the interactive Plotly widget!
         _ = rmf.ridge_finder_multiple_interactive(**figure_inputs)
-        
-        print(f"\033[92m \n Everything saved for Figure number {ind_range} \033[0m \n Figure location is ")
-            # except Exception as e:
-            #     print(f"\033[91m \n Figure not plotted for time range {trange} \n because of"
-            #           f"following exception: {e} \n \033[0m")
-            #     continue
+
+        print(
+            f"\033[92m \n Everything saved for Figure number {ind_range} \033[0m \n Figure location is "
+        )
+        # except Exception as e:
+        #     print(f"\033[91m \n Figure not plotted for time range {trange} \n because of"
+        #           f"following exception: {e} \n \033[0m")
+        #     continue
 
 print(f"Took {round(time.time() - start, 3)} seconds")

@@ -52,9 +52,9 @@ def get_shear(b_vec_1, b_vec_2, angle_unit="radians"):
     unit_vec_2 = b_vec_2 / np.linalg.norm(b_vec_2)
     angle = np.arccos(np.dot(unit_vec_1, unit_vec_2))
 
-    if (angle_unit == "radians"):
+    if angle_unit == "radians":
         return angle
-    elif (angle_unit == "degrees"):
+    elif angle_unit == "degrees":
         return angle * 180 / np.pi
     else:
         raise KeyError("angle_unit must be radians or degrees")
@@ -102,7 +102,7 @@ def get_rxben(b_vec_1, b_vec_2):
     rx_b_mag_2 = np.linalg.norm(rx_b_2)
 
     # Reconnection energy (from Hesse2013)
-    rx_en = rx_b_mag_1 ** 2 * rx_b_mag_2 ** 2
+    rx_en = rx_b_mag_1**2 * rx_b_mag_2**2
 
     return rx_en
 
@@ -147,8 +147,9 @@ def get_vcs(b_vec_1, b_vec_2, n_1, n_2):
     rx_mag_1 = np.linalg.norm(rx_b_1)
     rx_mag_2 = np.linalg.norm(rx_b_2)
 
-    vcs = va_p1 * np.sqrt(rx_mag_1 * rx_mag_2 * (rx_mag_1 +
-                          rx_mag_2) / (rx_mag_1 * n_2 + rx_mag_2 * n_1))
+    vcs = va_p1 * np.sqrt(
+        rx_mag_1 * rx_mag_2 * (rx_mag_1 + rx_mag_2) / (rx_mag_1 * n_2 + rx_mag_2 * n_1)
+    )
 
     return vcs
 
@@ -216,9 +217,9 @@ def get_ca(b_vec, angle_unit="radians"):
     """
     angle = np.arctan(b_vec[1] / b_vec[2])
 
-    if (angle_unit == "radians"):
+    if angle_unit == "radians":
         return angle
-    elif (angle_unit == "degrees"):
+    elif angle_unit == "degrees":
         return angle * 180 / np.pi
     else:
         raise KeyError("angle_unit must be radians or degrees")
@@ -245,7 +246,7 @@ def ridge_finder_multiple(
     sym_h=None,
     sigma=[2.2, 2.2, 2.2, 2.2],
     mode="nearest",
-    alpha=1.,
+    alpha=1.0,
     vmin=[None, None, None, None],
     vmax=[None, None, None, None],
     cmap_list=["viridis", "viridis", "viridis", "viridis"],
@@ -382,8 +383,10 @@ def ridge_finder_multiple(
             t_range_date = datetime.datetime.strptime(t_range[0], "%Y-%m-%d %H:%M:%S")
         t_range_date_min = t_range_date - datetime.timedelta(minutes=dt)
         t_range_date_max = t_range_date + datetime.timedelta(minutes=dt)
-        t_range = [t_range_date_min.strftime("%Y-%m-%d %H:%M:%S"),
-                   t_range_date_max.strftime("%Y-%m-%d %H:%M:%S")]
+        t_range = [
+            t_range_date_min.strftime("%Y-%m-%d %H:%M:%S"),
+            t_range_date_max.strftime("%Y-%m-%d %H:%M:%S"),
+        ]
 
     if dark_mode:
         plt.style.use("dark_background")
@@ -437,8 +440,8 @@ def ridge_finder_multiple(
         X, Y = np.ogrid[:n_rows, :n_cols]
 
         # Find the central row and column
-        c_row = int(n_rows/2)
-        c_col = int(n_cols/2)
+        c_row = int(n_rows / 2)
+        c_col = int(n_cols / 2)
         # Find the distance of each pixel from the central pixel in terms of pixels
         dist_pxl = np.sqrt((X - c_row) ** 2 + (Y - c_col) ** 2)
         mask_image = dist_pxl > xrange[1] / dr
@@ -447,7 +450,7 @@ def ridge_finder_multiple(
             cmap_list = ["viridis", "viridis", "viridis", "viridis"]
         else:
             cmap_list = cmap_list
-        if (vmin is not None and vmax is not None):
+        if vmin is not None and vmax is not None:
             norm = plt.Normalize(vmin=vmin[i], vmax=vmax[i])
         else:
             norm = plt.Normalize()
@@ -455,10 +458,10 @@ def ridge_finder_multiple(
         kwargs = {"sigmas": [sigma[i]], "black_ridges": False, "mode": mode, "alpha": 1}
 
         # Smoothen the image
-        image_smooth = sp.ndimage.gaussian_filter(image_rotated, order=convolution_order[i],
-                                                  sigma=[5, 5], mode=mode)
-        image_smooth_p = sp.ndimage.gaussian_filter(image_rotated, order=0, sigma=[5, 5],
-                                                    mode=mode)
+        image_smooth = sp.ndimage.gaussian_filter(
+            image_rotated, order=convolution_order[i], sigma=[5, 5], mode=mode
+        )
+        image_smooth_p = sp.ndimage.gaussian_filter(image_rotated, order=0, sigma=[5, 5], mode=mode)
         result = frangi(image_smooth, **kwargs)  # frangi, hessian, meijering, sato
 
         m_result = result.copy()
@@ -480,13 +483,19 @@ def ridge_finder_multiple(
                 pass
 
         # TODO: Find a better way to do this
-        j = i//2
+        j = i // 2
         k = i % 2
 
         axs1 = plt.subplot(gs[j, k])
-        im1 = axs1.imshow(image_smooth_p, extent=[xrange[0], xrange[1], yrange[0], yrange[1]],
-                          origin="lower", cmap=cmap_list[i], norm=norm, interpolation=interpolation,
-                          alpha=1)
+        im1 = axs1.imshow(
+            image_smooth_p,
+            extent=[xrange[0], xrange[1], yrange[0], yrange[1]],
+            origin="lower",
+            cmap=cmap_list[i],
+            norm=norm,
+            interpolation=interpolation,
+            alpha=1,
+        )
         divider1 = make_axes_locatable(axs1)
         # Draw a circle of radius 15 (terminator) around the center of the image
         axs1.add_patch(plt.Circle((0, 0), radius=15, color="gray", fill=False, lw=0.5))
@@ -497,9 +506,10 @@ def ridge_finder_multiple(
 
         r_a_l = 5
         for xx in range(len(y_val)):
-            y_val_avg[xx] = np.nanmean(y_val[max(0, xx - r_a_l):min(len(y_val), xx + r_a_l)])
-            im_max_val_avg[xx] = np.nanmean(im_max_val[max(0, xx - r_a_l):min(len(y_val),
-                                            xx + r_a_l)])
+            y_val_avg[xx] = np.nanmean(y_val[max(0, xx - r_a_l) : min(len(y_val), xx + r_a_l)])
+            im_max_val_avg[xx] = np.nanmean(
+                im_max_val[max(0, xx - r_a_l) : min(len(y_val), xx + r_a_l)]
+            )
 
         if draw_ridge:
             x_intr_vals = np.linspace(xrange[0], xrange[1], x_len)
@@ -577,9 +587,11 @@ def ridge_finder_multiple(
         if save_rc_file:
             if not os.path.exists(rc_folder):
                 os.makedirs(rc_folder)
-            var_list = "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"\
-                       "b_msh_x,b_msh_y,b_msh_z,r_rc,method_used,b_imf_x,b_imf_y,"\
-                       "b_imf_z,dipole,imf_clock_angle,p_dyn"
+            var_list = (
+                "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"
+                "b_msh_x,b_msh_y,b_msh_z,r_rc,method_used,b_imf_x,b_imf_y,"
+                "b_imf_z,dipole,imf_clock_angle,p_dyn"
+            )
             data_dict = {
                 "mms_spc_num": mms_probe_num,
                 "date_from": t_range[0],
@@ -597,7 +609,7 @@ def ridge_finder_multiple(
                 "b_imf_z": b_imf[2],
                 "dipole": dipole_tilt_angle * 180 / np.pi,
                 "imf_clock_angle": imf_clock_angle,
-                "p_dyn": p_dyn
+                "p_dyn": p_dyn,
             }
             # Add keys and data from df_jet_reversal to data_dict if those keys aren"t already
             # present in the dictionary
@@ -628,28 +640,56 @@ def ridge_finder_multiple(
                 print(f"Saved data to {rc_folder + rc_file_name}")
 
         # plot an arrow along the magnetosheath magnetic field direction
-        axs1.arrow(r0[1], r0[2], 5 * b_msh_dir[1], 5 * b_msh_dir[2], head_width=0.4,
-                   head_length=0.7, fc="w", ec="r", linewidth=2, ls="-")
+        axs1.arrow(
+            r0[1],
+            r0[2],
+            5 * b_msh_dir[1],
+            5 * b_msh_dir[2],
+            head_width=0.4,
+            head_length=0.7,
+            fc="w",
+            ec="r",
+            linewidth=2,
+            ls="-",
+        )
 
         # Plot the arrow along the magnetosheath velocity direction
-        axs1.arrow(r0[1], r0[2], 5 * v_msh_dir[1], 5 * v_msh_dir[2], head_width=0.4,
-                   head_length=0.7, fc="w", ec="b", linewidth=2, ls="-")
+        axs1.arrow(
+            r0[1],
+            r0[2],
+            5 * v_msh_dir[1],
+            5 * v_msh_dir[2],
+            head_width=0.4,
+            head_length=0.7,
+            fc="w",
+            ec="b",
+            linewidth=2,
+            ls="-",
+        )
 
         # Plot line connecting the spacecraft position and the reconnection line
         if ~np.isnan(dist_rc):
             # axs1.plot(x_intr_vals, y_intr_vals, "--", color="w", linewidth=2)
             axs1.plot([r0[1], x_y_point[0]], [r0[2], x_y_point[1]], "--", color="w", linewidth=2)
             distance = f"$R_{{\\rm rc}}$ = {dist_rc:.2f} $R_{{\\rm E}}$"
-            axs1.text(x_intr_vals[0] - 6, y_intr_vals[0] + 2, distance, fontsize=l_label_size * 1.2,
-                      color="k", ha="left", va="bottom")
+            axs1.text(
+                x_intr_vals[0] - 6,
+                y_intr_vals[0] + 2,
+                distance,
+                fontsize=l_label_size * 1.2,
+                color="k",
+                ha="left",
+                va="bottom",
+            )
 
         # Plot a horizontal line at x=0 and a vertical line at y=0
         axs1.axhline(0, color="k", linestyle="-", linewidth=0.5, alpha=0.5)
         axs1.axvline(0, color="k", linestyle="-", linewidth=0.5, alpha=0.5)
 
-        if (draw_patch):
-            patch = patches.Circle((0, 0), radius=xrange[1], transform=axs1.transData, fc="none",
-                                   ec="k", lw=0.5)
+        if draw_patch:
+            patch = patches.Circle(
+                (0, 0), radius=xrange[1], transform=axs1.transData, fc="none", ec="k", lw=0.5
+            )
             im1.set_clip_path(patch)
         axs1.add_patch(patch)
         if i == 0 or i == 2:
@@ -665,77 +705,186 @@ def ridge_finder_multiple(
         else:
             text_color = "black"
         if i == 1:
-            axs1.text(1.15, 1.12, f"Model: {tsy_model}", horizontalalignment="right",
-                      verticalalignment="bottom", transform=axs1.transAxes, rotation=0,
-                      color=text_color, fontsize=l_label_size, bbox=box_style)
+            axs1.text(
+                1.15,
+                1.12,
+                f"Model: {tsy_model}",
+                horizontalalignment="right",
+                verticalalignment="bottom",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=l_label_size,
+                bbox=box_style,
+            )
 
         if i == 0:
-            axs1.text(-0.18, 1.12, f"MMS Position - [{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}] $R_E$ \n [GSM]",
-                      horizontalalignment="left",
-                      verticalalignment="bottom", transform=axs1.transAxes, rotation=0,
-                      color=text_color, fontsize=l_label_size, bbox=box_style)
+            axs1.text(
+                -0.18,
+                1.12,
+                f"MMS Position - [{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}] $R_E$ \n [GSM]",
+                horizontalalignment="left",
+                verticalalignment="bottom",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=l_label_size,
+                bbox=box_style,
+            )
 
         # Define the location of the colorbar, it"s size relative to main figure and the padding
         # between the colorbar and the figure, the orientation the colorbar
         cax1 = divider1.append_axes("top", size="5%", pad=0.01)
-        cbar1 = plt.colorbar(im1, cax=cax1, orientation="horizontal", ticks=None, fraction=0.05,
-                             pad=0.01)
-        cbar1.ax.tick_params(axis="x", direction="in", top=True, labeltop=True, bottom=False,
-                             labelbottom=False, pad=0.01, labelsize=ct_tick_size,
-                             labelcolor=label_color)
+        cbar1 = plt.colorbar(
+            im1, cax=cax1, orientation="horizontal", ticks=None, fraction=0.05, pad=0.01
+        )
+        cbar1.ax.tick_params(
+            axis="x",
+            direction="in",
+            top=True,
+            labeltop=True,
+            bottom=False,
+            labelbottom=False,
+            pad=0.01,
+            labelsize=ct_tick_size,
+            labelcolor=label_color,
+        )
         cbar1.ax.xaxis.set_label_position("top")
-        cbar1.ax.set_xlabel(f"{c_label[i]}", fontsize=c_label_size,
-                            color=clabel_color)
+        cbar1.ax.set_xlabel(f"{c_label[i]}", fontsize=c_label_size, color=clabel_color)
         # Draw the spacecraft position
         axs1.plot(mms_sc_pos[1], mms_sc_pos[2], "white", marker="$\\bigoplus$", ms=15, alpha=1)
 
         # Set tick label parameters
         if i == 0 or i == 2:
-            axs1.tick_params(axis="both", direction="in", which="major", left=True, right=True,
-                             top=True, bottom=True, labelleft=True, labelright=False,
-                             labeltop=False, labelbottom=True, labelsize=t_label_size,
-                             length=tick_len, width=tick_width, labelcolor=label_color)
+            axs1.tick_params(
+                axis="both",
+                direction="in",
+                which="major",
+                left=True,
+                right=True,
+                top=True,
+                bottom=True,
+                labelleft=True,
+                labelright=False,
+                labeltop=False,
+                labelbottom=True,
+                labelsize=t_label_size,
+                length=tick_len,
+                width=tick_width,
+                labelcolor=label_color,
+            )
         else:
-            axs1.tick_params(axis="both", direction="in", which="major", left=True, right=True,
-                             top=True, bottom=True, labelleft=False, labelright=True,
-                             labeltop=False, labelbottom=True, labelsize=t_label_size,
-                             length=tick_len, width=tick_width, labelcolor=label_color)
+            axs1.tick_params(
+                axis="both",
+                direction="in",
+                which="major",
+                left=True,
+                right=True,
+                top=True,
+                bottom=True,
+                labelleft=False,
+                labelright=True,
+                labeltop=False,
+                labelbottom=True,
+                labelsize=t_label_size,
+                length=tick_len,
+                width=tick_width,
+                labelcolor=label_color,
+            )
         # Write the timme range on the plot
         if i == 2:
-            axs1.text(-0.17, -0.1, f"Clock Angle: {imf_clock_angle:.2f}$^\\circ$",
-                      horizontalalignment="left", verticalalignment="top", transform=axs1.transAxes,
-                      rotation=0, color=text_color, fontsize=l_label_size, bbox=box_style)
+            axs1.text(
+                -0.17,
+                -0.1,
+                f"Clock Angle: {imf_clock_angle:.2f}$^\\circ$",
+                horizontalalignment="left",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=l_label_size,
+                bbox=box_style,
+            )
         elif i == 3:
-            axs1.text(1.17, -0.1,
-                      f"Dipole tilt: {dipole_tilt_angle * 180 / np.pi:.2f}$^\\circ$",
-                      horizontalalignment="right", verticalalignment="top",
-                      transform=axs1.transAxes, rotation=0, color=text_color, fontsize=l_label_size,
-                      bbox=box_style)
+            axs1.text(
+                1.17,
+                -0.1,
+                f"Dipole tilt: {dipole_tilt_angle * 180 / np.pi:.2f}$^\\circ$",
+                horizontalalignment="right",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=l_label_size,
+                bbox=box_style,
+            )
         if i == 0:
             # Add a label "(a)" to the plot to indicate the panel number
-            axs1.text(0.05, 0.1, "(a)", horizontalalignment="left", verticalalignment="top",
-                      transform=axs1.transAxes, rotation=0, color=text_color,
-                      fontsize=1.2 * l_label_size)
+            axs1.text(
+                0.05,
+                0.1,
+                "(a)",
+                horizontalalignment="left",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=1.2 * l_label_size,
+            )
         elif i == 1:
             # Add a label "(b)" to the plot to indicate the panel number
-            axs1.text(0.1, 0.1, "(b)", horizontalalignment="right", verticalalignment="top",
-                      transform=axs1.transAxes, rotation=0, color=text_color,
-                      fontsize=1.2 * l_label_size)
+            axs1.text(
+                0.1,
+                0.1,
+                "(b)",
+                horizontalalignment="right",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=1.2 * l_label_size,
+            )
         elif i == 2:
             # Add a label "(c)" to the plot to indicate the panel number
-            axs1.text(0.05, 0.1, "(c)", horizontalalignment="left", verticalalignment="top",
-                      transform=axs1.transAxes, rotation=0, color=text_color,
-                      fontsize=1.2 * l_label_size)
+            axs1.text(
+                0.05,
+                0.1,
+                "(c)",
+                horizontalalignment="left",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=1.2 * l_label_size,
+            )
         elif i == 3:
             # Add a label "(d)" to the plot to indicate the panel number
-            axs1.text(0.1, 0.1, "(d)", horizontalalignment="right", verticalalignment="top",
-                      transform=axs1.transAxes, rotation=0, color=text_color,
-                      fontsize=1.2 * l_label_size)
+            axs1.text(
+                0.1,
+                0.1,
+                "(d)",
+                horizontalalignment="right",
+                verticalalignment="top",
+                transform=axs1.transAxes,
+                rotation=0,
+                color=text_color,
+                fontsize=1.2 * l_label_size,
+            )
 
         # Show minor ticks
         axs1.minorticks_on()
-        axs1.tick_params(axis="both", which="minor", direction="in", length=mtick_len, left=True,
-                         right=True, top=True, bottom=True, color=mtick_color, width=mtick_width)
+        axs1.tick_params(
+            axis="both",
+            which="minor",
+            direction="in",
+            length=mtick_len,
+            left=True,
+            right=True,
+            top=True,
+            bottom=True,
+            color=mtick_color,
+            width=mtick_width,
+        )
         # Set the number of ticks on the x-axis
         axs1.xaxis.set_major_locator(MaxNLocator(nbins=5, prune="lower"))
         # Set the number of ticks on the y-axis
@@ -745,8 +894,13 @@ def ridge_finder_multiple(
         plt.setp(axs1.get_xticklabels(), rotation=0, ha="right", va="top", visible=True)
         plt.setp(axs1.get_yticklabels(), rotation=0, va="center", visible=True)
         # Set the title of the plot
-        fig.suptitle(f"Time range: {t_range[0]} - {t_range[1]} \n $B_{{\\rm {{imf}}}}$ = [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT",
-                     fontsize=label_size, color=text_color, y=title_y_pos, alpha=0.65)
+        fig.suptitle(
+            f"Time range: {t_range[0]} - {t_range[1]} \n $B_{{\\rm {{imf}}}}$ = [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT",
+            fontsize=label_size,
+            color=text_color,
+            y=title_y_pos,
+            alpha=0.65,
+        )
 
     if save_fig:
         try:
@@ -754,9 +908,11 @@ def ridge_finder_multiple(
             # folder. Gives out error if the folder can"t be created.
             temp1 = parser.parse(t_range[1]).strftime("%Y-%m-%d_%H-%M-%S")
             fig_time_range = f"{parser.parse(t_range[0]).strftime('%Y-%m-%d_%H-%M-%S')}_{temp1}"
-            fig_folder = Path(f"figures/all_ridge_plots/{tsy_model}/{interpolation}"
-                              f"_interpolation_mms{mms_probe_num}/{fig_version}")
-            
+            fig_folder = Path(
+                f"figures/all_ridge_plots/{tsy_model}/{interpolation}"
+                f"_interpolation_mms{mms_probe_num}/{fig_version}"
+            )
+
             if not fig_folder.exists():
                 fig_folder.mkdir(parents=True, exist_ok=True)
                 print("created folder : ", fig_folder)
@@ -831,24 +987,24 @@ def model_run(*args):
         else:
             signz = np.sign(z0)
 
-        if (rp <= zp):
+        if rp <= zp:
 
             x_shu = (r - m_p) * np.cos(theta)
             phi = np.arctan2(z0, y0)
 
-            if (abs(y0) == 0 or abs(z0) == 0):
-                if (abs(y0) == 0):
+            if abs(y0) == 0 or abs(z0) == 0:
+                if abs(y0) == 0:
                     y_shu = 0
                     z_shu = (r - m_p) * np.sin(theta)
-                elif (abs(z0) == 0):
+                elif abs(z0) == 0:
                     z_shu = 0
                     y_shu = (r - m_p) * np.sin(theta)
             else:
-                z_shu = np.sqrt((rp - 1.0)**2 / (1 + np.tan(phi)**(-2)))
+                z_shu = np.sqrt((rp - 1.0) ** 2 / (1 + np.tan(phi) ** (-2)))
                 y_shu = z_shu / np.tan(phi)
 
             m_proton = 1.672e-27  # Mass of proton in SI unit
-            n_sh = sw_params["rho"] * (1.509 * np.exp(x_shu / rmp) + .1285) / m_proton
+            n_sh = sw_params["rho"] * (1.509 * np.exp(x_shu / rmp) + 0.1285) / m_proton
 
             y_shu = abs(y_shu) * signy
             z_shu = abs(z_shu) * signz
@@ -857,21 +1013,30 @@ def model_run(*args):
             # the distance from the focus to the magnetopause surface
             A = 2
             ll = 3 * rmp / 2 - x0
-            b_msx = - A * (- sw_params["b_imf"][0] * (1 - rmp / (2 * ll)) + sw_params["b_imf"][1]
-                           * (y0 / ll) + sw_params["b_imf"][2] * (z0 / ll))
-            b_msy = A * (- sw_params["b_imf"][0] * (y0 / (2 * ll)) + sw_params["b_imf"][1]
-                         * (2 - y0**2 / (ll * rmp)) - sw_params["b_imf"][2] * (y0 * z0 / (ll *
-                                                                                          rmp)))
-            b_msz = A * (- sw_params["b_imf"][0] * (z0 / (2 * ll)) - sw_params["b_imf"][1]
-                         * (y0 * z0 / (ll * rmp)) + sw_params["b_imf"][2] * (2 - z0**2 / (ll *
-                                                                                          rmp)))
+            b_msx = -A * (
+                -sw_params["b_imf"][0] * (1 - rmp / (2 * ll))
+                + sw_params["b_imf"][1] * (y0 / ll)
+                + sw_params["b_imf"][2] * (z0 / ll)
+            )
+            b_msy = A * (
+                -sw_params["b_imf"][0] * (y0 / (2 * ll))
+                + sw_params["b_imf"][1] * (2 - y0**2 / (ll * rmp))
+                - sw_params["b_imf"][2] * (y0 * z0 / (ll * rmp))
+            )
+            b_msz = A * (
+                -sw_params["b_imf"][0] * (z0 / (2 * ll))
+                - sw_params["b_imf"][1] * (y0 * z0 / (ll * rmp))
+                + sw_params["b_imf"][2] * (2 - z0**2 / (ll * rmp))
+            )
             try:
                 if model_type == "t96":
-                    bx_ext, by_ext, bz_ext = gp.t96.t96(sw_params["param"], sw_params["ps"], x_shu,
-                                                        y_shu, z_shu)
+                    bx_ext, by_ext, bz_ext = gp.t96.t96(
+                        sw_params["param"], sw_params["ps"], x_shu, y_shu, z_shu
+                    )
                 elif model_type == "t01":
-                    bx_ext, by_ext, bz_ext = gp.t01.t01(sw_params["param"], sw_params["ps"], x_shu,
-                                                        y_shu, z_shu)
+                    bx_ext, by_ext, bz_ext = gp.t01.t01(
+                        sw_params["param"], sw_params["ps"], x_shu, y_shu, z_shu
+                    )
             except Exception:
                 print(f"Skipped for {x_shu, y_shu, z_shu}")
                 pass
@@ -890,8 +1055,24 @@ def model_run(*args):
             bisec_msp, bisec_msh = get_bis([bx, by, bz], [b_msx, b_msy, b_msz])
             break
 
-    return (j, k, bx, by, bz, shear, rx_en, va_cs, bisec_msp, bisec_msh, x_shu, y_shu, z_shu, b_msx,
-            b_msy, b_msz)
+    return (
+        j,
+        k,
+        bx,
+        by,
+        bz,
+        shear,
+        rx_en,
+        va_cs,
+        bisec_msp,
+        bisec_msh,
+        x_shu,
+        y_shu,
+        z_shu,
+        b_msx,
+        b_msy,
+        b_msz,
+    )
 
 
 def get_sw_params(
@@ -901,7 +1082,7 @@ def get_sw_params(
     trange=None,
     mms_probe_num=None,
     latest_version=False,
-    verbose=False
+    verbose=False,
 ):
     r"""
     Retrieve and process solar wind parameters and spacecraft location from the OMNI and MMS databases.
@@ -934,19 +1115,23 @@ def get_sw_params(
     """
 
     if trange is None:
-        raise ValueError("trange must be specified as a list of start and end times in the format"
-                         "'YYYY-MM-DD HH:MM:SS'.")
+        raise ValueError(
+            "trange must be specified as a list of start and end times in the format"
+            "'YYYY-MM-DD HH:MM:SS'."
+        )
 
     # Check if trange is either a list or an array of length 2
     if not isinstance(trange, (list, np.ndarray)) or len(trange) != 2:
         raise ValueError(
-            "trange must be specified as a list or array of length 2 in the format" +
-            "'YYYY-MM-DD HH:MM:SS'")
+            "trange must be specified as a list or array of length 2 in the format"
+            + "'YYYY-MM-DD HH:MM:SS'"
+        )
 
     # Download the OMNI data (default level of "hro_1min") for the specified timerange.
     omni_varnames = ["BX_GSE", "BY_GSM", "BZ_GSM", "proton_density", "Vx", "Vy", "Vz", "SYM_H", "T"]
-    omni_vars = spd.omni.data(trange=trange, varnames=omni_varnames, level=omni_level,
-                              time_clip=time_clip)
+    omni_vars = spd.omni.data(
+        trange=trange, varnames=omni_varnames, level=omni_level, time_clip=time_clip
+    )
 
     omni_time = spd.get_data(omni_vars[0])[0]
     # print(f"omni_time: {omni_time}")
@@ -963,15 +1148,15 @@ def get_sw_params(
     # Convert omni_time to datetime objects from unix time
     omni_time_datetime = [datetime.datetime.utcfromtimestamp(t) for t in omni_time]
     # Get trange in datetime format
-    omni_trange_time_object = [pd.to_datetime(trange[0]),
-                               pd.to_datetime(trange[1])]
+    omni_trange_time_object = [pd.to_datetime(trange[0]), pd.to_datetime(trange[1])]
     # Add utc as timezone to omni_trange_time_object
-    omni_trange_time_object = [t.replace(tzinfo=datetime.timezone.utc) for t in
-                               omni_trange_time_object]
+    omni_trange_time_object = [
+        t.replace(tzinfo=datetime.timezone.utc) for t in omni_trange_time_object
+    ]
 
     # Get mms postion in GSM coordinates for the specified time range
 
-    if (mms_probe_num is not None):
+    if mms_probe_num is not None:
         # Define mms time as the center of the time range
         mms_time_t0 = pd.to_datetime(trange[0])
         mms_time_dt = pd.to_datetime(trange[1]) - mms_time_t0
@@ -979,22 +1164,36 @@ def get_sw_params(
 
         # Define mms time range as +/- 10 seconds from the mms time
         mms_trange = [mms_time - pd.Timedelta("5 second"), mms_time + pd.Timedelta("5 second")]
-        mms_mec_trange = [mms_time - pd.Timedelta("30 second"),
-                          mms_time + pd.Timedelta("30 second")]
+        mms_mec_trange = [
+            mms_time - pd.Timedelta("30 second"),
+            mms_time + pd.Timedelta("30 second"),
+        ]
         # Convert mms time range to string
-        mms_trange = [mms_trange[0].strftime("%Y-%m-%d %H:%M:%S"),
-                      mms_trange[1].strftime("%Y-%m-%d %H:%M:%S")]
-        mms_mec_trange = [mms_mec_trange[0].strftime("%Y-%m-%d %H:%M:%S"),
-                          mms_mec_trange[1].strftime("%Y-%m-%d %H:%M:%S")]
+        mms_trange = [
+            mms_trange[0].strftime("%Y-%m-%d %H:%M:%S"),
+            mms_trange[1].strftime("%Y-%m-%d %H:%M:%S"),
+        ]
+        mms_mec_trange = [
+            mms_mec_trange[0].strftime("%Y-%m-%d %H:%M:%S"),
+            mms_mec_trange[1].strftime("%Y-%m-%d %H:%M:%S"),
+        ]
         # Convert mms time range to datetime
-        mms_trange_time_object = [pd.to_datetime(mms_trange[0]),
-                                  pd.to_datetime(mms_trange[1])]
-        mms_mec_trange_time_object = [pd.to_datetime(mms_mec_trange[0]),
-                                      pd.to_datetime(mms_mec_trange[1])]
+        mms_trange_time_object = [pd.to_datetime(mms_trange[0]), pd.to_datetime(mms_trange[1])]
+        mms_mec_trange_time_object = [
+            pd.to_datetime(mms_mec_trange[0]),
+            pd.to_datetime(mms_mec_trange[1]),
+        ]
 
         mms_mec_varnames = [f"mms{mms_probe_num}_mec_r_gsm"]
-        _ = mms.mec(trange=mms_mec_trange, varnames=mms_mec_varnames, probe=mms_probe_num,
-                        data_rate="srvy", level="l2", time_clip=time_clip, latest_version=latest_version)
+        _ = mms.mec(
+            trange=mms_mec_trange,
+            varnames=mms_mec_varnames,
+            probe=mms_probe_num,
+            data_rate="srvy",
+            level="l2",
+            time_clip=time_clip,
+            latest_version=latest_version,
+        )
         mms_mec_time = spd.get_data(f"mms{mms_probe_num}_mec_r_gsm")[0]
         # Convert mms fgm time to datetime
         mms_mec_time = np.array([datetime.datetime.utcfromtimestamp(t) for t in mms_mec_time])
@@ -1006,8 +1205,12 @@ def get_sw_params(
         # TODO: Find out why adding "mms_fgm_varnames" as a variable causes the code to give out no
         # data.
         mms_fgm_varnames = [f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2"]
-        _ = mms.fgm(trange=mms_trange, probe=mms_probe_num, time_clip=time_clip,
-                        latest_version=latest_version)
+        _ = mms.fgm(
+            trange=mms_trange,
+            probe=mms_probe_num,
+            time_clip=time_clip,
+            latest_version=latest_version,
+        )
         # mms_fgm_time = spd.get_data(mms_fgm_varnames[0])[0]
 
         mms_fgm_b_gsm = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[1:4][0]
@@ -1018,34 +1221,62 @@ def get_sw_params(
         try:
             data_rate = "fast"
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
-            _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
-                            level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
-                            time_clip=time_clip, latest_version=latest_version)
-            _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
-                            name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
-                            coord_in="gse", coord_out="gsm")
+            _ = mms.fpi(
+                trange=mms_trange,
+                probe=mms_probe_num,
+                data_rate=data_rate,
+                level="l2",
+                datatype="dis-moms",
+                varnames=mms_fpi_varnames,
+                time_clip=time_clip,
+                latest_version=latest_version,
+            )
+            _ = spd.cotrans(
+                name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
+                name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
+                coord_in="gse",
+                coord_out="gsm",
+            )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
             mms_fpi_time = np.array([datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time])
-            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
+            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
+                0
+            ]
             if verbose:
-                print(f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n")
+                print(
+                    f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
+                )
         except:
             # Get the data from the FPI
             data_rate = "brst"
             mms_fpi_varnames = [f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}"]
-            _ = mms.fpi(trange=mms_trange, probe=mms_probe_num, data_rate=data_rate,
-                            level="l2", datatype="dis-moms", varnames=mms_fpi_varnames,
-                            time_clip=time_clip, latest_version=latest_version)
-            _ = spd.cotrans(name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
-                            name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
-                            coord_in="gse", coord_out="gsm")
+            _ = mms.fpi(
+                trange=mms_trange,
+                probe=mms_probe_num,
+                data_rate=data_rate,
+                level="l2",
+                datatype="dis-moms",
+                varnames=mms_fpi_varnames,
+                time_clip=time_clip,
+                latest_version=latest_version,
+            )
+            _ = spd.cotrans(
+                name_in=f"mms{mms_probe_num}_dis_bulkv_gse_{data_rate}",
+                name_out=f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}",
+                coord_in="gse",
+                coord_out="gsm",
+            )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
             mms_fpi_time = [datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time]
-            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][0]
+            mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
+                0
+            ]
             if verbose:
-                print(f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n")
+                print(
+                    f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
+                )
     else:
         mms_time = None
         mms_sc_pos = None
@@ -1054,45 +1285,48 @@ def get_sw_params(
         pass
 
     # Create the dataframe for OMNI data using omni_time_datetime as the index
-    omni_df = pd.DataFrame({
-        "time": omni_time,
-        "bx_gsm": omni_bx_gse,
-        "by_gsm": omni_by_gsm,
-        "bz_gsm": omni_bz_gsm,
-        "vx": omni_vx,
-        "vy": omni_vy,
-        "vz": omni_vz,
-        "np": omni_np,
-        "sym_h": omni_sym_h,
-        "t_p": omni_t_p,
-    }, index=omni_time_datetime)
+    omni_df = pd.DataFrame(
+        {
+            "time": omni_time,
+            "bx_gsm": omni_bx_gse,
+            "by_gsm": omni_by_gsm,
+            "bz_gsm": omni_bz_gsm,
+            "vx": omni_vx,
+            "vy": omni_vy,
+            "vz": omni_vz,
+            "np": omni_np,
+            "sym_h": omni_sym_h,
+            "t_p": omni_t_p,
+        },
+        index=omni_time_datetime,
+    )
 
     # Add UTC as time zone to the index of omni_df
     omni_df.index = omni_df.index.tz_localize("UTC")
 
     # Get the mean values of the parameters from OMNI data for the time range betwwen
-    time_imf = np.nanmean(omni_df["time"].loc[omni_trange_time_object[0]:
-                                              omni_trange_time_object[1]])
-    b_imf_x = np.nanmean(omni_df["bx_gsm"].loc[omni_trange_time_object[0]:
-                                               omni_trange_time_object[1]])
-    b_imf_y = np.nanmean(omni_df["by_gsm"].loc[omni_trange_time_object[0]:
-                                               omni_trange_time_object[1]])
-    b_imf_z = np.nanmean(omni_df["bz_gsm"].loc[omni_trange_time_object[0]:
-                                               omni_trange_time_object[1]])
-    vx_imf = np.nanmean(omni_df["vx"].loc[omni_trange_time_object[0]:
-                                          omni_trange_time_object[1]])
-    vy_imf = np.nanmean(omni_df["vy"].loc[omni_trange_time_object[0]:
-                                          omni_trange_time_object[1]])
-    vz_imf = np.nanmean(omni_df["vz"].loc[omni_trange_time_object[0]:
-                                          omni_trange_time_object[1]])
-    np_imf = np.nanmean(omni_df["np"].loc[omni_trange_time_object[0]:
-                                          omni_trange_time_object[1]])
-    sym_h_imf = np.nanmean(omni_df["sym_h"].loc[omni_trange_time_object[0]:
-                                                omni_trange_time_object[1]])
-    tp_imf = np.nanmean(omni_df["t_p"].loc[omni_trange_time_object[0]:
-                                           omni_trange_time_object[1]])
+    time_imf = np.nanmean(
+        omni_df["time"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]]
+    )
+    b_imf_x = np.nanmean(
+        omni_df["bx_gsm"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]]
+    )
+    b_imf_y = np.nanmean(
+        omni_df["by_gsm"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]]
+    )
+    b_imf_z = np.nanmean(
+        omni_df["bz_gsm"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]]
+    )
+    vx_imf = np.nanmean(omni_df["vx"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]])
+    vy_imf = np.nanmean(omni_df["vy"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]])
+    vz_imf = np.nanmean(omni_df["vz"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]])
+    np_imf = np.nanmean(omni_df["np"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]])
+    sym_h_imf = np.nanmean(
+        omni_df["sym_h"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]]
+    )
+    tp_imf = np.nanmean(omni_df["t_p"].loc[omni_trange_time_object[0] : omni_trange_time_object[1]])
 
-    if (b_imf_z > 15 or b_imf_z < -18):
+    if b_imf_z > 15 or b_imf_z < -18:
         warnings.warn(
             f"The given parameters produced the z-component of IMF field (b_imf_z) {b_imf_z} nT,"
             f"which is out of range in which model is valid (-18 nT < b_imf_z < 15 nT)"
@@ -1112,18 +1346,34 @@ def get_sw_params(
         mean_mms_sc_pos = None
 
     print("IMF parameters found:")
-    if (verbose):
-        print(tabulate(
-            [["Time of observation (UTC)", f"{time_imf_hrf}"],
-             ["IMF Magnetic field [GSM] (nT)", f"[{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}]"],
-             ["IMF Proton density (1/cm^-3)", f"{np_imf:.2f}"],
-             ["IMF Plasma velocity (km/sec)", f"[{v_imf[0]:.2f}, {v_imf[1]:.2f}, {v_imf[2]:.2f}]"],
-             ["IMF clock angle (degrees)", f"{imf_clock_angle:.2f}"],
-             ["IMF Sym H", f"{sym_h_imf:.2f}"],
-             ["MMS position (GSM) (R_E)", f"[{mean_mms_sc_pos[0]:.2f}, {mean_mms_sc_pos[1]:.2f}, "
-                                          f"{mean_mms_sc_pos[2]:.2f}]"]],
-            headers=["Parameter", "Value"], tablefmt="fancy_grid", floatfmt=".2f",
-            numalign="center"))
+    if verbose:
+        print(
+            tabulate(
+                [
+                    ["Time of observation (UTC)", f"{time_imf_hrf}"],
+                    [
+                        "IMF Magnetic field [GSM] (nT)",
+                        f"[{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}]",
+                    ],
+                    ["IMF Proton density (1/cm^-3)", f"{np_imf:.2f}"],
+                    [
+                        "IMF Plasma velocity (km/sec)",
+                        f"[{v_imf[0]:.2f}, {v_imf[1]:.2f}, {v_imf[2]:.2f}]",
+                    ],
+                    ["IMF clock angle (degrees)", f"{imf_clock_angle:.2f}"],
+                    ["IMF Sym H", f"{sym_h_imf:.2f}"],
+                    [
+                        "MMS position (GSM) (R_E)",
+                        f"[{mean_mms_sc_pos[0]:.2f}, {mean_mms_sc_pos[1]:.2f}, "
+                        f"{mean_mms_sc_pos[2]:.2f}]",
+                    ],
+                ],
+                headers=["Parameter", "Value"],
+                tablefmt="fancy_grid",
+                floatfmt=".2f",
+                numalign="center",
+            )
+        )
 
     # Check if the values are finite, if not then assign a default value to each of them
     if ~(np.isfinite(np_imf)):
@@ -1144,7 +1394,7 @@ def get_sw_params(
     #  Solar wind ram pressure in nPa, including roughly 4% Helium++ contribution
     p_dyn = 1.6726e-6 * 1.15 * np_imf * (vx_imf**2 + vy_imf**2 + vz_imf**2)
 
-    if (p_dyn > 8.5 or p_dyn < 0.5):
+    if p_dyn > 8.5 or p_dyn < 0.5:
         warnings.warn(
             f"The given parameters produced a dynamic pressure of {p_dyn} nPa which is out of"
             f" range in which model is valid (0.5 nPa < p_dyn < 8.5 nPa)",
@@ -1158,28 +1408,31 @@ def get_sw_params(
     df_fgm = pd.DataFrame(data=mms_fgm_b_gsm, columns=["Bx", "By", "Bz"], index=mms_fgm_time)
 
     # Get the mean of the fgm data for time range between mms_trange_time_object[0] and
-    bx_mean = np.nanmean(df_fgm["Bx"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
-    by_mean = np.nanmean(df_fgm["By"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
-    bz_mean = np.nanmean(df_fgm["Bz"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
+    bx_mean = np.nanmean(df_fgm["Bx"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
+    by_mean = np.nanmean(df_fgm["By"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
+    bz_mean = np.nanmean(df_fgm["Bz"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
 
     # Create a dataframe for mms fpi data
     df_fpi = pd.DataFrame(data=mms_fpi_bulkv_gsm, columns=["Vx", "Vy", "Vz"], index=mms_fpi_time)
 
     # Get the mean of the fpi data for time range between mms_trange_time_object[0] and
-    vx_mean = np.nanmean(df_fpi["Vx"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
-    vy_mean = np.nanmean(df_fpi["Vy"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
-    vz_mean = np.nanmean(df_fpi["Vz"].loc[mms_trange_time_object[0]:mms_trange_time_object[1]])
+    vx_mean = np.nanmean(df_fpi["Vx"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
+    vy_mean = np.nanmean(df_fpi["Vy"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
+    vz_mean = np.nanmean(df_fpi["Vz"].loc[mms_trange_time_object[0] : mms_trange_time_object[1]])
 
     # Create a dataframe for mms sc position data
     df_mec = pd.DataFrame(data=mms_sc_pos, columns=["X", "Y", "Z"], index=mms_mec_time)
 
     # Get the mean of the sc position data for time range between mms_trange_time_object[0] and
-    x_mean = np.nanmean(df_mec["X"].loc[
-                                    mms_mec_trange_time_object[0]:mms_mec_trange_time_object[1]])
-    y_mean = np.nanmean(df_mec["Y"].loc[
-                                    mms_mec_trange_time_object[0]:mms_mec_trange_time_object[1]])
-    z_mean = np.nanmean(df_mec["Z"].loc[
-                                    mms_mec_trange_time_object[0]:mms_mec_trange_time_object[1]])
+    x_mean = np.nanmean(
+        df_mec["X"].loc[mms_mec_trange_time_object[0] : mms_mec_trange_time_object[1]]
+    )
+    y_mean = np.nanmean(
+        df_mec["Y"].loc[mms_mec_trange_time_object[0] : mms_mec_trange_time_object[1]]
+    )
+    z_mean = np.nanmean(
+        df_mec["Z"].loc[mms_mec_trange_time_object[0] : mms_mec_trange_time_object[1]]
+    )
 
     # Make a dictionary of all the solar wind parameters
     sw_dict = {}
@@ -1218,7 +1471,7 @@ def rx_model(
     z_max=None,
     save_data=False,
     latest_version=False,
-    nprocesses=None
+    nprocesses=None,
 ):
     """
     This function computes the magnetosheath and magnetospheric magnetic fields using the T96 model
@@ -1277,8 +1530,8 @@ def rx_model(
     Returns
     -------
     dict
-        A dictionary containing the computed solar wind parameters, input model grid coordinates, 
-        and the resulting arrays for magnetospheric and magnetosheath fields, shear angle, 
+        A dictionary containing the computed solar wind parameters, input model grid coordinates,
+        and the resulting arrays for magnetospheric and magnetosheath fields, shear angle,
         reconnection energy, exhaust velocity, and bisection fields.
     """
 
@@ -1300,15 +1553,22 @@ def rx_model(
             trange_date = datetime.datetime.strptime(trange[0], "%Y-%m-%d %H:%M:%S")
         trange_date_min = trange_date - datetime.timedelta(minutes=dt)
         trange_date_max = trange_date + datetime.timedelta(minutes=dt)
-        trange = [trange_date_min.strftime("%Y-%m-%d %H:%M:%S"),
-                  trange_date_max.strftime("%Y-%m-%d %H:%M:%S")]
+        trange = [
+            trange_date_min.strftime("%Y-%m-%d %H:%M:%S"),
+            trange_date_max.strftime("%Y-%m-%d %H:%M:%S"),
+        ]
         # Add timezones to trange (UTC)
         trange = [trange[0] + "Z", trange[1] + "Z"]
 
-
     # Get the solar wind parameters for the model
-    sw_params = get_sw_params(probe=probe, omni_level=omni_level, trange=trange,
-                              mms_probe_num=mms_probe_num, latest_version=latest_version, verbose=True)
+    sw_params = get_sw_params(
+        probe=probe,
+        omni_level=omni_level,
+        trange=trange,
+        mms_probe_num=mms_probe_num,
+        latest_version=latest_version,
+        verbose=True,
+    )
 
     n_arr_y = int((y_max - y_min) / dr) + 1
     n_arr_z = int((z_max - z_min) / dr) + 1
@@ -1334,7 +1594,8 @@ def rx_model(
 
     # Shue et al.,1998, equation 10
     ro = (10.22 + 1.29 * np.tanh(0.184 * (sw_params["b_imf"][2] + 8.14))) * (
-        sw_params["p_dyn"])**(-1.0 / 6.6)
+        sw_params["p_dyn"]
+    ) ** (-1.0 / 6.6)
 
     # Shue et al.,1998, equation 11
     alpha = (0.58 - 0.007 * sw_params["b_imf"][2]) * (1 + 0.024 * np.log(sw_params["p_dyn"]))
@@ -1348,8 +1609,11 @@ def rx_model(
     else:
         p = mp.Pool(processes=nprocesses)
 
-    input = ((j, k, y_max, z_max, dr, m_p, ro, alpha, rmp, sw_params, model_type)
-             for j in range(len_y) for k in range(len_z))
+    input = (
+        (j, k, y_max, z_max, dr, m_p, ro, alpha, rmp, sw_params, model_type)
+        for j in range(len_y)
+        for k in range(len_z)
+    )
 
     print("Running the model \n")
     res = p.map(model_run, input)
@@ -1407,11 +1671,28 @@ def rx_model(
             print(f"Date saved to file {fn} \n")
         except Exception as e:
             print(e)
-            print(f"Data not saved to file {fn}. Please make sure that file name is correctly" +
-                  " assigned and that the directory exists and you have write permissions")
+            print(
+                f"Data not saved to file {fn}. Please make sure that file name is correctly"
+                + " assigned and that the directory exists and you have write permissions"
+            )
 
-    return (bx, by, bz, shear, rx_en, va_cs, bisec_msp, bisec_msh, sw_params, x_shu, y_shu, z_shu,
-            b_msx, b_msy, b_msz)
+    return (
+        bx,
+        by,
+        bz,
+        shear,
+        rx_en,
+        va_cs,
+        bisec_msp,
+        bisec_msh,
+        sw_params,
+        x_shu,
+        y_shu,
+        z_shu,
+        b_msx,
+        b_msy,
+        b_msz,
+    )
 
 
 def line_fnc(
@@ -1469,7 +1750,7 @@ def line_fnc_der(x, y):
 def target_fnc(r, r0, b_msh, line_fnc, line_intrp):
     p_line = line_fnc(r0=r0, b_msh=b_msh, r=r)
     z_surface = line_intrp(p_line[1])
-    return np.sum((p_line[2] - z_surface)**2)
+    return np.sum((p_line[2] - z_surface) ** 2)
 
 
 def nan_helper(y):
@@ -1511,7 +1792,7 @@ def ridge_finder_multiple_interactive(
     sym_h=None,
     sigma=[2.2, 2.2, 2.2, 2.2],
     mode="nearest",
-    alpha=1.,
+    alpha=1.0,
     vmin=[None, None, None, None],
     vmax=[None, None, None, None],
     cmap_list=["Viridis", "Viridis", "Viridis", "Viridis"],
@@ -1545,15 +1826,13 @@ def ridge_finder_multiple_interactive(
             t_range_date = datetime.datetime.strptime(t_range[0], "%Y-%m-%d %H:%M:%S")
         t_range_date_min = t_range_date - datetime.timedelta(minutes=dt)
         t_range_date_max = t_range_date + datetime.timedelta(minutes=dt)
-        t_range = [t_range_date_min.strftime("%Y-%m-%d %H:%M:%S"),
-                   t_range_date_max.strftime("%Y-%m-%d %H:%M:%S")]
+        t_range = [
+            t_range_date_min.strftime("%Y-%m-%d %H:%M:%S"),
+            t_range_date_max.strftime("%Y-%m-%d %H:%M:%S"),
+        ]
 
     # Plotly layout
-    fig = make_subplots(
-        rows=2, cols=2,
-        horizontal_spacing=0.20,
-        vertical_spacing=0.08
-    )
+    fig = make_subplots(rows=2, cols=2, horizontal_spacing=0.20, vertical_spacing=0.08)
 
     dist_rc_list = []
 
@@ -1565,16 +1844,16 @@ def ridge_finder_multiple_interactive(
         image_rotated = np.transpose(image[i])
         n_rows, n_cols = image_rotated.shape
         X, Y = np.ogrid[:n_rows, :n_cols]
-        c_row = int(n_rows/2)
-        c_col = int(n_cols/2)
+        c_row = int(n_rows / 2)
+        c_col = int(n_cols / 2)
         dist_pxl = np.sqrt((X - c_row) ** 2 + (Y - c_col) ** 2)
         mask_image = dist_pxl > xrange[1] / dr
 
         kwargs = {"sigmas": [sigma[i]], "black_ridges": False, "mode": mode, "alpha": 1}
-        image_smooth = sp.ndimage.gaussian_filter(image_rotated, order=convolution_order[i],
-                                                  sigma=[5, 5], mode=mode)
-        image_smooth_p = sp.ndimage.gaussian_filter(image_rotated, order=0, sigma=[5, 5],
-                                                    mode=mode)
+        image_smooth = sp.ndimage.gaussian_filter(
+            image_rotated, order=convolution_order[i], sigma=[5, 5], mode=mode
+        )
+        image_smooth_p = sp.ndimage.gaussian_filter(image_rotated, order=0, sigma=[5, 5], mode=mode)
         result = frangi(image_smooth, **kwargs)
 
         m_result = result.copy()
@@ -1589,7 +1868,7 @@ def ridge_finder_multiple_interactive(
         y_val = np.full(y_len, np.nan)
         y_vals.append(y_val)
         im_max_val = np.full(y_len, np.nan)
-        
+
         for xx in range(y_len):
             try:
                 y_val[xx] = np.nanargmax(m_result[:, xx]) * dr + yrange[0]
@@ -1615,54 +1894,80 @@ def ridge_finder_multiple_interactive(
                 y=y_grid,
                 colorscale=cmap_list[i],
                 showscale=True,
-                colorbar=dict(title=c_label[i] if c_label[i] else "", orientation="v", x=cb_x, y=cb_y, len=0.46, thickness=15)
+                colorbar=dict(
+                    title=c_label[i] if c_label[i] else "",
+                    orientation="v",
+                    x=cb_x,
+                    y=cb_y,
+                    len=0.46,
+                    thickness=15,
+                ),
             ),
-            row=row, col=col
+            row=row,
+            col=col,
         )
 
         # Add circle outline (Terminator)
         if draw_patch[i]:
-            fig.add_shape(type="circle",
-                xref=f"x{i+1}", yref=f"y{i+1}",
-                x0=-15, y0=-15, x1=15, y1=15,
-                line=dict(color="gray", width=1)
+            fig.add_shape(
+                type="circle",
+                xref=f"x{i+1}",
+                yref=f"y{i+1}",
+                x0=-15,
+                y0=-15,
+                x1=15,
+                y1=15,
+                line=dict(color="gray", width=1),
             )
 
         y_val_avg = np.full(len(y_val), np.nan)
         im_max_val_avg = np.full(len(y_val), np.nan)
         r_a_l = 5
         for xx in range(len(y_val)):
-            y_val_avg[xx] = np.nanmean(y_val[max(0, xx - r_a_l):min(len(y_val), xx + r_a_l)])
-            im_max_val_avg[xx] = np.nanmean(im_max_val[max(0, xx - r_a_l):min(len(y_val), xx + r_a_l)])
+            y_val_avg[xx] = np.nanmean(y_val[max(0, xx - r_a_l) : min(len(y_val), xx + r_a_l)])
+            im_max_val_avg[xx] = np.nanmean(
+                im_max_val[max(0, xx - r_a_l) : min(len(y_val), xx + r_a_l)]
+            )
 
         if draw_ridge[i]:
             x_intr_vals = x_grid
             y_intr_vals = im_max_val_avg
             fig.add_trace(
                 go.Scatter(
-                    x=x_intr_vals, y=y_intr_vals,
+                    x=x_intr_vals,
+                    y=y_intr_vals,
                     mode="lines",
                     line=dict(color="aqua", width=2),
-                    showlegend=False
+                    showlegend=False,
                 ),
-                row=row, col=col
+                row=row,
+                col=col,
             )
 
         r0 = mms_sc_pos[:3]
 
         fig.add_trace(
             go.Scatter(
-                x=[r0[1]], y=[r0[2]],
+                x=[r0[1]],
+                y=[r0[2]],
                 mode="markers",
                 marker=dict(symbol="circle-cross", size=15, color="white"),
-                showlegend=False
+                showlegend=False,
             ),
-            row=row, col=col
+            row=row,
+            col=col,
         )
 
         fig.update_xaxes(title_text="Y [GSM, R_E]", range=xrange, row=row, col=col)
-        fig.update_yaxes(title_text="Z [GSM, R_E]", range=yrange, row=row, col=col, scaleanchor=f"x{i+1}", scaleratio=1)
-        
+        fig.update_yaxes(
+            title_text="Z [GSM, R_E]",
+            range=yrange,
+            row=row,
+            col=col,
+            scaleanchor=f"x{i+1}",
+            scaleratio=1,
+        )
+
         # Execute the heavy math to compute distance and directions
         line_intrp = line_fnc_der(x=x_grid, y=im_max_val_avg)
 
@@ -1702,41 +2007,63 @@ def ridge_finder_multiple_interactive(
         # CSV saving moved outside the loop
         # Plotly Annotations for Arrows
         fig.add_annotation(
-            x=r0[1] + 5 * b_msh_dir[1], y=r0[2] + 5 * b_msh_dir[2],
-            ax=r0[1], ay=r0[2],
-            xref=f"x{i+1}", yref=f"y{i+1}",
-            axref=f"x{i+1}", ayref=f"y{i+1}",
-            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="red"
+            x=r0[1] + 5 * b_msh_dir[1],
+            y=r0[2] + 5 * b_msh_dir[2],
+            ax=r0[1],
+            ay=r0[2],
+            xref=f"x{i+1}",
+            yref=f"y{i+1}",
+            axref=f"x{i+1}",
+            ayref=f"y{i+1}",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=2,
+            arrowcolor="red",
         )
-        
+
         fig.add_annotation(
-            x=r0[1] + 5 * v_msh_dir[1], y=r0[2] + 5 * v_msh_dir[2],
-            ax=r0[1], ay=r0[2],
-            xref=f"x{i+1}", yref=f"y{i+1}",
-            axref=f"x{i+1}", ayref=f"y{i+1}",
-            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="blue"
+            x=r0[1] + 5 * v_msh_dir[1],
+            y=r0[2] + 5 * v_msh_dir[2],
+            ax=r0[1],
+            ay=r0[2],
+            xref=f"x{i+1}",
+            yref=f"y{i+1}",
+            axref=f"x{i+1}",
+            ayref=f"y{i+1}",
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=2,
+            arrowcolor="blue",
         )
 
         if not np.isnan(dist_rc):
             fig.add_trace(
                 go.Scatter(
-                    x=[r0[1], x_y_point[0]], y=[r0[2], x_y_point[1]],
-                    mode="lines", line=dict(color="white", width=2, dash="dash"),
-                    showlegend=False
+                    x=[r0[1], x_y_point[0]],
+                    y=[r0[2], x_y_point[1]],
+                    mode="lines",
+                    line=dict(color="white", width=2, dash="dash"),
+                    showlegend=False,
                 ),
-                row=row, col=col
+                row=row,
+                col=col,
             )
             # Add text annotation
             fig.add_annotation(
-                x=r0[1] - 0.5, y=r0[2] + 0.5,
-                xref=f"x{i+1}", yref=f"y{i+1}",
+                x=r0[1] - 0.5,
+                y=r0[2] + 0.5,
+                xref=f"x{i+1}",
+                yref=f"y{i+1}",
                 text=f"R_rc = {dist_rc:.2f} R_E",
                 showarrow=False,
                 font=dict(color="white", size=13),
                 bgcolor="rgba(0,0,0,0.6)",
                 bordercolor="white",
                 borderwidth=1,
-                xanchor="right", yanchor="bottom"
+                xanchor="right",
+                yanchor="bottom",
             )
 
         # Plotly lines for axes
@@ -1745,11 +2072,14 @@ def ridge_finder_multiple_interactive(
 
     if save_rc_file:
         import os
+
         os.makedirs(rc_folder, exist_ok=True)
-        var_list = "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"\
-                   "b_msh_x,b_msh_y,b_msh_z,b_imf_x,b_imf_y,"\
-                   "b_imf_z,dipole,imf_clock_angle,p_dyn"
-        
+        var_list = (
+            "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"
+            "b_msh_x,b_msh_y,b_msh_z,b_imf_x,b_imf_y,"
+            "b_imf_z,dipole,imf_clock_angle,p_dyn"
+        )
+
         data_dict = {
             "mms_spc_num": mms_probe_num,
             "date_from": t_range[0],
@@ -1765,9 +2095,9 @@ def ridge_finder_multiple_interactive(
             "b_imf_z": b_imf[2],
             "dipole": dipole_tilt_angle * 180 / np.pi if dipole_tilt_angle is not None else np.nan,
             "imf_clock_angle": imf_clock_angle if imf_clock_angle is not None else np.nan,
-            "p_dyn": p_dyn if p_dyn is not None else np.nan
+            "p_dyn": p_dyn if p_dyn is not None else np.nan,
         }
-        
+
         try:
             if df_jet_reversal is not None:
                 for key in df_jet_reversal.keys():
@@ -1776,18 +2106,18 @@ def ridge_finder_multiple_interactive(
                         var_list += "," + key
         except Exception:
             pass
-            
+
         for i, dist_rc in enumerate(dist_rc_list):
             method_used = c_label[i] if c_label[i] else f"model_{i}"
             key_name = f"r_rc_{method_used}"
             data_dict[key_name] = np.round(dist_rc, 3)
             var_list += "," + key_name
-            
+
         rc_path = os.path.join(rc_folder, rc_file_name)
         if not os.path.exists(rc_path):
             with open(rc_path, "w") as f:
                 f.write(var_list + "\n")
-                
+
         with open(rc_path, "a") as f:
             for key in data_dict.keys():
                 try:
@@ -1799,12 +2129,20 @@ def ridge_finder_multiple_interactive(
     # Define toggle button based on initial dark_mode
     if dark_mode:
         initial_label = "🌙"
-        args1 = [{"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}]
-        args2 = [{"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}]
+        args1 = [
+            {"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}
+        ]
+        args2 = [
+            {"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}
+        ]
     else:
         initial_label = "☀️"
-        args1 = [{"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}]
-        args2 = [{"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}]
+        args1 = [
+            {"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}
+        ]
+        args2 = [
+            {"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}
+        ]
 
     # Add center text annotation
     info_text = (
@@ -1815,18 +2153,21 @@ def ridge_finder_multiple_interactive(
         f"Dipole Tilt: {dipole_tilt_angle:.2f}°<br>"
         f"Clock Angle: {imf_clock_angle:.2f}°"
     )
-    
+
     fig.add_annotation(
         text=info_text,
-        xref="paper", yref="paper",
-        x=0.5, y=1.15,
-        xanchor="center", yanchor="top",
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=1.15,
+        xanchor="center",
+        yanchor="top",
         showarrow=False,
         font=dict(size=14),
         bordercolor="gray",
         borderwidth=1,
         bgcolor="rgba(0,0,0,0.5)" if dark_mode else "rgba(255,255,255,0.8)",
-        align="center"
+        align="center",
     )
 
     # Update layout for interactive plot
@@ -1840,34 +2181,36 @@ def ridge_finder_multiple_interactive(
             dict(
                 type="buttons",
                 direction="left",
-                buttons=list([
-                    dict(args=args1, args2=args2, label=initial_label, method="relayout")
-                ]),
+                buttons=list(
+                    [dict(args=args1, args2=args2, label=initial_label, method="relayout")]
+                ),
                 pad={"r": 10, "t": 10},
                 showactive=False,
                 x=1.0,
                 xanchor="right",
                 y=1.15,
-                yanchor="top"
+                yanchor="top",
             )
-        ]
+        ],
     )
 
     if save_fig:
         try:
             temp1 = parser.parse(t_range[1]).strftime("%Y-%m-%d_%H-%M-%S")
             fig_time_range = f"{parser.parse(t_range[0]).strftime('%Y-%m-%d_%H-%M-%S')}_{temp1}"
-            fig_folder = Path(f"interactive_figures/all_ridge_plots/{tsy_model}/{interpolation}"
-                              f"_interpolation_mms{mms_probe_num}/{fig_version}")
-            
+            fig_folder = Path(
+                f"interactive_figures/all_ridge_plots/{tsy_model}/{interpolation}"
+                f"_interpolation_mms{mms_probe_num}/{fig_version}"
+            )
+
             if not fig_folder.exists():
                 fig_folder.mkdir(parents=True, exist_ok=True)
-            
+
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.html"
             fig.write_html(str(fig_name), default_width="100%", default_height="100%")
             print(f"Interactive figure saved as {fig_name}")
         except Exception as e:
             print(e)
-            
+
     return fig

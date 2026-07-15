@@ -22,27 +22,27 @@ date_obs = "20260714"
 
 def check_jet_reversal(crossing_time):
     # Convert the crossing time to a datetime object
-    crossing_time = datetime.datetime.strptime(crossing_time.split("+")[0],
-                                               "%Y-%m-%d %H:%M:%S")
+    crossing_time = datetime.datetime.strptime(crossing_time.split("+")[0], "%Y-%m-%d %H:%M:%S")
     # Set the timezone to UTC
     crossing_time = crossing_time.replace(tzinfo=pytz.utc)
     print(f"crossing_time = {crossing_time}")
     # Try with "brst" data rate, if that fails then try with "fast"
-    inputs = {"crossing_time": crossing_time,
-              "dt": 300,
-              "probe": 3,
-              "jet_len": 3,
-              "level": "l2",
-              "coord_type": "lmn",
-              "data_type": ["dis-moms", "des-moms"],
-              "time_clip": True,
-              "latest_version": False,
-              "date_obs": date_obs,
-              "figname": "mms_jet_reversal_check_lmn_mean",
-              "fname": f"data/mms_jet_reversal_times_list_{date_obs}_brst.csv",
-              "error_file_log_name": f"data/mms_jet_reversal_check_err_log_{date_obs}.csv",
-              "verbose": True
-              }
+    inputs = {
+        "crossing_time": crossing_time,
+        "dt": 300,
+        "probe": 3,
+        "jet_len": 3,
+        "level": "l2",
+        "coord_type": "lmn",
+        "data_type": ["dis-moms", "des-moms"],
+        "time_clip": True,
+        "latest_version": False,
+        "date_obs": date_obs,
+        "figname": "mms_jet_reversal_check_lmn_mean",
+        "fname": f"data/mms_jet_reversal_times_list_{date_obs}_brst.csv",
+        "error_file_log_name": f"data/mms_jet_reversal_check_err_log_{date_obs}.csv",
+        "verbose": True,
+    }
 
     inputs["data_rate"] = "brst"
     _ = jrcf.jet_reversal_check(**inputs)

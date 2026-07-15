@@ -17,7 +17,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                        jet_len=5, figname='mms_jet_reversal_check', date_obs=None,
                        fname='data/mms_jet_reversal_times.csv',
                        error_file_log_name="data/mms_jet_reversal_check_error_log.csv",
-                       verbose=True
+                       verbose=True, return_plotly_fig=False, dark_mode=False
                        ):
     """
     For a given crossing time and a given probe, the function finds out if MMS observed a jet
@@ -79,11 +79,14 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
     trange = [crossing_time_min, crossing_time_max]
 
     # Get the index corresponding to the crossing time in the data
-    df_crossing_temp = pd.read_csv("data/brst_intervals.csv", index_col=False)
-    df_crossing_temp['start_time'] = pd.to_datetime(df_crossing_temp['start_time'])
-    ind_crossing = np.where(df_crossing_temp['start_time'] == crossing_time)[0][0]
+    try:
+        df_crossing_temp = pd.read_csv("data/brst_intervals.csv", index_col=False)
+        df_crossing_temp['start_time'] = pd.to_datetime(df_crossing_temp['start_time'])
+        ind_crossing = np.where(df_crossing_temp['start_time'] == crossing_time)[0][0]
+    except Exception:
+        ind_crossing = 0
     print("Crossing index:", ind_crossing)
-    # ind_crossing = 111
+
     # Get the data from the FPI
     mms_fpi_varnames = [f'mms{probe}_dis_numberdensity_{data_rate}',
                         f'mms{probe}_dis_bulkv_gse_{data_rate}',
@@ -258,29 +261,21 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
         date_obs=date_obs
     )
 
-    if jet_detection:
-        t_delta_v_min = df_mms.index[ind_jet_center_minus_1_min:ind_jet_center]
-        t_delta_v_max = df_mms.index[ind_jet_center:ind_jet_center_plus_1_min]
-
-        # Convert t_delta_v_min and t_delta_v_max to from datetime object to UNIX time
-        t_delta_v_min_unix = [t_delta_v_min[i].timestamp() for i in range(len(t_delta_v_min))]
-        t_delta_v_max_unix = [t_delta_v_max[i].timestamp() for i in range(len(t_delta_v_max))]
-        t_delta_v_min_unix = np.array(t_delta_v_min_unix)
-        t_delta_v_max_unix = np.array(t_delta_v_max_unix)
-
-        # Add delta_v_min and delta_v_max to ptt
-        spd.store_data('delta_v_min', data={'x': t_delta_v_min_unix,
-                                            'y': delta_v_min})
-        spd.store_data('delta_v_max', data={'x': t_delta_v_max_unix,
-                                            'y': delta_v_max})
-        spd.store_data('delta_v', data=['delta_v_min', 'delta_v_max'])
-        
-        # Add delta_v and vp_lmn_diff_l to ptt
-        spd.store_data('delta_v_vp_lmn_diff_l', data=['vp_lmn_diff_l', 'delta_v_min', 'delta_v_max'])
-
-    # Add vp_lmn_diff_l to ptt
+    # Add vp_lmn_diff_l to ptt FIRST so the pseudo-variable can find it!
     spd.store_data('vp_lmn_diff_l', data={'x': mms_fpi_time_unix,
                                           'y': vp_lmn_diff_l})
+
+    if jet_detection:
+        t_delta_v_min = mms_fpi_time_unix[ind_jet_center_minus_1_min:ind_jet_center]
+        delta_v_min_data = vp_lmn_diff_l[ind_jet_center_minus_1_min:ind_jet_center]
+        
+        t_delta_v_max = mms_fpi_time_unix[ind_jet_center:ind_jet_center_plus_1_min]
+        delta_v_max_data = vp_lmn_diff_l[ind_jet_center:ind_jet_center_plus_1_min]
+        
+        spd.store_data('delta_v_min', data={'x': t_delta_v_min, 'y': delta_v_min_data})
+        spd.store_data('delta_v_max', data={'x': t_delta_v_max, 'y': delta_v_max_data})
+
+        spd.store_data('delta_v_vp_lmn_diff_l', data=['vp_lmn_diff_l', 'delta_v_min', 'delta_v_max'])
 
     # Get different parameters for magnetosphere and magnetosheath
     np_msp = df_mms['np'].iloc[ind_range_msp] * 1e6  # Convert to m^-3 from cm^-3
@@ -373,6 +368,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
     # Check if within 2 minutes of crossing time the values went above and below the threshold
     # If ind_vals is not empty, then append the crossing time to the csv file
     # if len(ind_vals) > 0:
+    data_dict = None
     if jet_detection:
         # Position of MMS in GSM coordinates in earth radii (r_e) units
         r_e = 6378.137  # Earth radius in km
@@ -456,6 +452,7 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
 
         if x > -5 and x < 12 and r_yz < 12:
             # Check if the file exists, if not then create it
+            os.makedirs(os.path.dirname(fname), exist_ok=True)
             if not os.path.isfile(fname):
                 with open(fname, 'w') as f:
                     f.write(var_list + '\n')
@@ -473,13 +470,13 @@ def jet_reversal_check(crossing_time=None, dt=90, probe=3, data_rate='fast', lev
                         print(f'Data for all keys written to file {fname}')
                     f.close()
 
-    tplot_fnc(probe=probe, data_rate=data_rate, level=level, df_mms=df_mms,
+    fig = tplot_fnc(probe=probe, data_rate=data_rate, level=level, df_mms=df_mms,
               ind_range_msp=ind_range_msp, ind_range_msh=ind_range_msh, t_jet_center=t_jet_center,
               jet_detection=jet_detection, ind_crossing=ind_crossing,
-              shear_val=int(angle_b_lmn_vec_msp_msh_median), date_obs=date_obs)
+              shear_val=int(angle_b_lmn_vec_msp_msh_median), date_obs=date_obs,
+              return_plotly_fig=return_plotly_fig, dark_mode=dark_mode)
 
-    return None
-
+    return fig, jet_detection, data_dict
 
 def check_jet_location(df_mms=None, jet_len=3, time_cadence_median=0.15, v_thresh=70,
                        ind_msh=None, verbose=True, ind_crossing=None, date_obs=None):
@@ -820,7 +817,7 @@ def check_msp_msh_location(df_mms=None, time_cadence_median=0.15, verbose=True):
 
 def tplot_fnc(probe=3, data_rate='brst', level='l2', df_mms=None, ind_range_msp=None,
               ind_range_msh=None, t_jet_center=None,  jet_detection=False, ind_crossing=None,
-              shear_val=None, date_obs=None,):
+              shear_val=None, date_obs=None, return_plotly_fig=False, dark_mode=False):
     """
     Plot the data from the MMS spacecraft along with jet detection results
 
@@ -1016,6 +1013,17 @@ def tplot_fnc(probe=3, data_rate='brst', level='l2', df_mms=None, ind_range_msp=
     figname = f"{folder_name}/mms{probe}_{t_jet_center.strftime('%Y%m%d_%H%M')}_" + \
               f"{str(ind_crossing).zfill(5)}_{shear_val}s_"
 
-    spd.tplot(keys_to_plot, save_png=figname, display=False)
-
-    return None
+    if return_plotly_fig:
+        from rxn_location.plotly_utils import convert_tplot_to_plotly
+        fig = convert_tplot_to_plotly(keys_to_plot, dark_mode=dark_mode)
+        
+        # Add timebars using go.Scatter vertical lines
+        for unix_t, color in [(msp_time_unix, 'red'), (msh_time_unix, 'blue'), (t_jet_center_unix, 'green')]:
+            t_dt = datetime.datetime.utcfromtimestamp(unix_t)
+            fig.add_vline(x=t_dt, line_dash="dash", line_color=color, line_width=2)
+            
+        fig.update_layout(title=f"Jet Detection for MMS{probe} {data_rate} data")
+        return fig
+    else:
+        spd.tplot(keys_to_plot, save_png=figname, display=False)
+        return None

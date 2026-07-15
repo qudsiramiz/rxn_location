@@ -34,6 +34,7 @@ def kde_plots(
               bins=[20, 20],
               dark_mode=True,
               var_marker_size=False,
+              return_fig=False,
               ):
 
     pad = 5
@@ -164,7 +165,8 @@ def kde_plots(
             os.makedirs(fig_dir)
         fname = f"{fig_dir}/{x}_vs_{y}_{data_type}_dm_{dark_mode}_20230721.png"
         axs1.savefig(fname, format='png', dpi=400)
-    plt.close('all')
+    if not return_fig:
+        plt.close('all')
     return axs1
 
 
@@ -186,34 +188,57 @@ def seaborn_subplots(
                      y_lim=None,
                      dark_mode=False,
                      var_marker_size=True,
+                     return_fig=False,
                      ):
 
     axs_list = []
-    for i, df in enumerate(df_list):
-        # Find the spearman and pearson correlation between key and "r_rc"
-        spearman = df[keys[1]].corr(df["r_rc"], method="spearman")
-        pearson = df[keys[1]].corr(df["r_rc"], method="pearson")
+    
+    # Pre-calculate global x_lim and y_lim if not provided
+    if x_lim is None:
+        all_x = np.concatenate([df[keys[0]].values for df in df_list if len(df) > 0 and keys[0] in df.columns])
+        if len(all_x) > 0:
+            x_lim = (np.nanmin(all_x), np.nanmax(all_x))
+            if x_lim[0] == x_lim[1]: x_lim = (x_lim[0] - 1, x_lim[1] + 1)
+        else:
+            x_lim = (0, 1)
+            
+    if y_lim is None:
+        all_y = np.concatenate([df[keys[1]].values for df in df_list if len(df) > 0 and keys[1] in df.columns])
+        if len(all_y) > 0:
+            y_lim = (np.nanmin(all_y), np.nanmax(all_y))
+            if y_lim[0] == y_lim[1]: y_lim = (y_lim[0] - 1, y_lim[1] + 1)
+        else:
+            y_lim = (0, 1)
 
-        if x_lim is None:
-            x_lim = (df[keys[0]].min(), df[keys[0]].max())
+    for i, df in enumerate(df_list):
+        if len(df) == 0 or keys[0] not in df.columns or keys[1] not in df.columns:
+            axs_list.append(None)
+            continue
+            
+        # Find the spearman and pearson correlation between key and "r_rc"
+        spearman = df[keys[1]].corr(df["r_rc"], method="spearman") if "r_rc" in df.columns else None
+        pearson = df[keys[1]].corr(df["r_rc"], method="pearson") if "r_rc" in df.columns else None
+
         if x_log_scale and x_lim[0] <= 0:
             # Raise a warning saying that the minimum value was changed
             warnings.warn(f"\033[91m The minimum value of {keys[0]} was changed from "
-                            f"{df[keys[0]].min():0.3f} to {x_lim[0]:0.3f} to avoid a log scale "
+                            f"{x_lim[0]:0.3f} to {x_lim[0]:0.3f} to avoid a log scale "
                             "error.\033[0m")
             # Set the minimum to minimum value greater than 0
-            x_lim = (df[df[keys[0]] > 0][keys[0]].min(), x_lim[1])
+            pos_x = np.concatenate([df[df[keys[0]] > 0][keys[0]].values for df in df_list if len(df) > 0 and keys[0] in df.columns])
+            min_pos = np.nanmin(pos_x) if len(pos_x) > 0 else 1
+            x_lim = (min_pos, x_lim[1])
 
-        if y_lim is None:
-            y_lim = [df[keys[1]].min(), df[keys[1]].max()]
         if y_log_scale and y_lim[0] <= 0:
             # Raise a warning saying that the minimum value was changed
             warnings.warn(f"\033[91m The minimum value of {keys[1]} was changed from "
-                            f"{df[keys[1]].min():0.3f} to {y_lim[0]:0.3f} to avoid a log scale "
+                            f"{y_lim[0]:0.3f} to {y_lim[0]:0.3f} to avoid a log scale "
                             "error.\033[0m")
 
             # Set the minimum to minimum value greater than 0
-            y_lim = (df[df[keys[1]] > 0][keys[1]].min(), y_lim[1])
+            pos_y = np.concatenate([df[df[keys[1]] > 0][keys[1]].values for df in df_list if len(df) > 0 and keys[1] in df.columns])
+            min_pos_y = np.nanmin(pos_y) if len(pos_y) > 0 else 1
+            y_lim = (min_pos_y, y_lim[1])
         if bins is None and (x_log_scale or y_log_scale):
             if x_log_scale and y_log_scale:
                 bins = [np.logspace(np.log10(x_lim[0]), np.log10(x_lim[1]), nbins[0]),
@@ -237,18 +262,18 @@ def seaborn_subplots(
                         y_label=labels[1], data_type=data_type[i], log_scale=log_scale,
                         x_log_scale=x_log_scale, y_log_scale=y_log_scale, marker_size=marker_size,
                         xlim=x_lim, ylim=y_lim, color=color_list[i], spearman=spearman,
-                        pearson=pearson, fig_save=True, bins=bins, dark_mode=dark_mode,
-                        var_marker_size=var_marker_size)
+                        pearson=pearson, fig_save=not return_fig, bins=bins, dark_mode=dark_mode,
+                        var_marker_size=var_marker_size, return_fig=return_fig)
         axs_list.append(axs)
 
     print(f"The figure size is {figsize[0]}, {figsize[1]}")
     fig = plt.figure(figsize=(figsize[0], figsize[1]))
     gs = gridspec.GridSpec(2, 2)
 
-    _ = sfg.SeabornFig2Grid(axs_list[0], fig, gs[0])
-    _ = sfg.SeabornFig2Grid(axs_list[1], fig, gs[1])
-    _ = sfg.SeabornFig2Grid(axs_list[2], fig, gs[2])
-    _ = sfg.SeabornFig2Grid(axs_list[3], fig, gs[3])
+    if axs_list[0] is not None: _ = sfg.SeabornFig2Grid(axs_list[0], fig, gs[0])
+    if axs_list[1] is not None: _ = sfg.SeabornFig2Grid(axs_list[1], fig, gs[1])
+    if axs_list[2] is not None: _ = sfg.SeabornFig2Grid(axs_list[2], fig, gs[2])
+    if axs_list[3] is not None: _ = sfg.SeabornFig2Grid(axs_list[3], fig, gs[3])
 
     gs.tight_layout(fig)
     gs.update(top=1, bottom=0.05, left=0.085, right=1, hspace=0.01, wspace=0.22)
@@ -260,4 +285,6 @@ def seaborn_subplots(
     fig.savefig(fig_name, dpi=300, bbox_inches='tight', pad_inches=0.25, format=fig_format)
     print(f"Saved figure to {fig_name} for {keys[0]} vs {keys[1]}")
 
+    if return_fig:
+        return fig, axs_list
     return axs_list

@@ -25,12 +25,41 @@ mtick_width = 0.7  # minor tick width in points
 
 label_pad = 5  # padding between label and axis
 
+def convert_wide_to_long(df):
+    """
+    Converts the new wide-format CSV (one row per crossing, with r_rc_shear, r_rc_rx_en, etc.) 
+    back into the legacy long-format (multiple rows, method_used and r_rc columns) 
+    so existing plotting code works seamlessly.
+    """
+    rc_cols = [col for col in df.columns if col.startswith('r_rc_')]
+    
+    if len(rc_cols) > 0:
+        # It's a wide format dataframe
+        id_vars = [col for col in df.columns if not col.startswith('r_rc_') and col != 'r_rc' and col != 'method_used']
+        
+        # Melt it
+        df_long = pd.melt(
+            df, 
+            id_vars=id_vars, 
+            value_vars=rc_cols,
+            var_name='method_used', 
+            value_name='r_rc'
+        )
+        
+        # Clean up the method_used column (e.g., 'r_rc_shear' -> 'shear')
+        df_long['method_used'] = df_long['method_used'].str.replace('r_rc_', '')
+        
+        return df_long
+    else:
+        # It's already in the legacy long format or doesn't have r_rc columns
+        return df
 
 def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="figures",
               fig_name="new", fig_format="pdf", histtype="step", linewidth=1, cut_type="jet",
-              r_lim=[0, 15], density=False):
+              r_lim=[0, 15], density=False, return_fig=False):
 
     df = pd.read_csv(file_name, index_col=False)
+    df = convert_wide_to_long(df)
 
     # Set date_from as index
     df = df.set_index("date_from")
@@ -97,7 +126,8 @@ def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="fi
     plt.rc('font', **font)
     # plt.rc('text', usetex=True)
 
-    plt.close("all")
+    if not return_fig:
+        plt.close("all")
 
     r_lim_val = 12
     shear_r_rc_mean = df_shear[df_shear.r_rc < r_lim_val]["r_rc"].mean()
@@ -249,7 +279,10 @@ def plot_hist(file_name, fig_size=(6, 6), dark_mode=True, bins=8, fig_folder="fi
     fig_name = f"{fig_folder}/{fig_name}_{cut_type}.{fig_format}"
     plt.savefig(fig_name, bbox_inches='tight', pad_inches=0.05,
                 dpi=200, transparent=transparent, format=fig_format)
-    plt.close()
+    if not return_fig:
+        plt.close()
     print(f"Figure saved as {fig_name} in {fig_format} format in {fig_folder}")
 
+    if return_fig:
+        return fig, df_shear, df_rx_en, df_va_cs, df_bisec
     return df_shear, df_rx_en, df_va_cs, df_bisec

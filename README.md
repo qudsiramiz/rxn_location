@@ -66,7 +66,19 @@ Once the dependencies are installed, start the virtual environment using:
 poetry shell
 ```
 
-In order to check for jet location in MMS data, use the following command:
+### Interactive GUI
+
+The easiest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize 3D reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
+
+To launch the GUI, run the following command from the root directory:
+```bash
+streamlit run src/rxn_location/app.py
+```
+For detailed instructions, refer to the [GUI Usage Guide](docs/gui_usage.md) or your MkDocs documentation site.
+
+### Command Line Scripts
+
+In order to check for jet location in MMS data via command line, use the following command:
 ```
 python -m jet_reversal_check.py
 ```

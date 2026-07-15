@@ -9,6 +9,9 @@ readme = "README.md"
 repository = "https://github.com/qudsiramiz/rxn_location"
 documentation = "https://qudsiramiz.github.io/rxn_location/"
 
+[tool.poetry.scripts]
+rxn-location-gui = "rxn_location.gui:run"
+
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
 spacepy = "^0.7.0"
@@ -23,6 +26,7 @@ more-itertools = "^11.1.0"
 seaborn = "^0.13.2"
 matplotlib = "^3.11.0"
 plotly = "^6.9.0"
+streamlit = "^1.59.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

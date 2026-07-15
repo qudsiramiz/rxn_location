@@ -495,7 +495,7 @@ def ridge_finder_multiple(
                           origin="lower", cmap=cmap_list[i], norm=norm, interpolation=interpolation,
                           alpha=1)
         divider1 = make_axes_locatable(axs1)
-        # Draw a circle of radius 10 around the center of the image
+        # Draw a circle of radius 15 (terminator) around the center of the image
         axs1.add_patch(plt.Circle((0, 0), radius=15, color="gray", fill=False, lw=0.5))
 
         # Take rolling average of the y_val array
@@ -617,6 +617,7 @@ def ridge_finder_multiple(
             except Exception:
                 pass
             # Save data to the csv file using tab delimiter
+            os.makedirs(rc_folder, exist_ok=True)
             if not os.path.exists(rc_folder + rc_file_name):
                 with open(rc_folder + rc_file_name, "w") as f:
                     f.write(var_list + "\n")
@@ -1292,7 +1293,6 @@ def rx_model(
     # Get the solar wind parameters for the model
     sw_params = get_sw_params(probe=probe, omni_level=omni_level, trange=trange,
                               mms_probe_num=mms_probe_num, latest_version=latest_version, verbose=True)
-    print(sw_params)
 
     n_arr_y = int((y_max - y_min) / dr) + 1
     n_arr_z = int((z_max - z_min) / dr) + 1
@@ -1534,13 +1534,9 @@ def ridge_finder_multiple_interactive(
 
     # Plotly layout
     fig = make_subplots(
-        rows=2, cols=3,
-        specs=[[{"type": "xy"}, {"type": "xy"}, {"type": "table"}],
-               [{"type": "xy"}, {"type": "xy"}, {"type": "table"}]],
-        subplot_titles=("(a)", "(b)", "Solar Wind Params", "(c)", "(d)", "Statistics"),
-        horizontal_spacing=wspace,
-        vertical_spacing=hspace,
-        column_widths=[0.38, 0.38, 0.24]
+        rows=2, cols=2,
+        horizontal_spacing=0.20,
+        vertical_spacing=0.08
     )
 
     dist_rc_list = []
@@ -1569,6 +1565,8 @@ def ridge_finder_multiple_interactive(
         m_result[mask_image] = np.nan
         new_image_rotated = image_rotated.copy()
         new_image_rotated[mask_image] = np.nan
+        image_smooth_p = image_smooth_p.astype(float)
+        image_smooth_p[mask_image] = np.nan
 
         x_len = image_rotated.shape[0]
         y_len = image_rotated.shape[1]
@@ -1589,10 +1587,9 @@ def ridge_finder_multiple_interactive(
         x_grid = np.linspace(xrange[0], xrange[1], x_len)
         y_grid = np.linspace(yrange[0], yrange[1], y_len)
 
-        # Calculate dynamic colorbar positions to stay right adjacent to the plots
-        # Col 1 domain ends at ~0.27, Col 2 domain ends at ~0.68 (with wspace=0.15)
-        cb_x = 0.275 if col == 1 else 0.69
-        cb_y = 0.78 if row == 1 else 0.22
+        # Calculate dynamic colorbar positions to align with new tighter layout
+        cb_x = 0.42 if col == 1 else 1.02
+        cb_y = 0.77 if row == 1 else 0.23
 
         # Plotly Heatmap
         fig.add_trace(
@@ -1602,12 +1599,12 @@ def ridge_finder_multiple_interactive(
                 y=y_grid,
                 colorscale=cmap_list[i],
                 showscale=True,
-                colorbar=dict(title=c_label[i] if c_label[i] else "", x=cb_x, y=cb_y, len=0.45, thickness=15)
+                colorbar=dict(title=c_label[i] if c_label[i] else "", orientation="v", x=cb_x, y=cb_y, len=0.46, thickness=15)
             ),
             row=row, col=col
         )
 
-        # Add circle outline
+        # Add circle outline (Terminator)
         if draw_patch[i]:
             fig.add_shape(type="circle",
                 xref=f"x{i+1}", yref=f"y{i+1}",
@@ -1686,6 +1683,7 @@ def ridge_finder_multiple_interactive(
             dist_rc = np.nan
         dist_rc_list.append(dist_rc)
 
+        # CSV saving moved outside the loop
         # Plotly Annotations for Arrows
         fig.add_annotation(
             x=r0[1] + 5 * b_msh_dir[1], y=r0[2] + 5 * b_msh_dir[2],
@@ -1729,45 +1727,58 @@ def ridge_finder_multiple_interactive(
         fig.add_hline(y=0, line_dash="solid", line_color="gray", line_width=0.5, row=row, col=col)
         fig.add_vline(x=0, line_dash="solid", line_color="gray", line_width=0.5, row=row, col=col)
 
-    # Prepare table data
-    table_headers = ["Parameter", "Value"]
-    
-    table1_cells = [
-        ["Time Range", "MMS Pos [GSM, R_E]", "B_imf [nT]", "P_dyn [nPa]", "Clock Angle", 
-         "Density [cm^-3]", "Velocity [km/s]", "Sym H [nT]"],
-        [f"{t_range[0]}<br>to {t_range[1]}", 
-         f"[{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}]", 
-         f"[{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}]",
-         f"{p_dyn:.2f}" if p_dyn is not None else "N/A",
-         f"{imf_clock_angle:.2f}" if imf_clock_angle is not None else "N/A",
-         f"{np_imf:.2f}" if np_imf is not None else "N/A",
-         f"[{v_imf[0]:.2f}, {v_imf[1]:.2f}, {v_imf[2]:.2f}]" if (v_imf is not None and v_imf[0] is not None) else "N/A",
-         f"{sym_h:.2f}" if sym_h is not None else "N/A"]
-    ]
-    
-    table2_cells = [
-        ["Dist Shear [R_E]", "Dist Rx En [R_E]", "Dist Va Cs [R_E]", "Dist Bisec [R_E]"],
-        [f"{dist_rc_list[0]:.2f}" if (len(dist_rc_list) > 0 and not np.isnan(dist_rc_list[0])) else "N/A",
-         f"{dist_rc_list[1]:.2f}" if (len(dist_rc_list) > 1 and not np.isnan(dist_rc_list[1])) else "N/A",
-         f"{dist_rc_list[2]:.2f}" if (len(dist_rc_list) > 2 and not np.isnan(dist_rc_list[2])) else "N/A",
-         f"{dist_rc_list[3]:.2f}" if (len(dist_rc_list) > 3 and not np.isnan(dist_rc_list[3])) else "N/A"]
-    ]
-    
-    fig.add_trace(
-        go.Table(
-            header=dict(values=table_headers, align="left"),
-            cells=dict(values=table1_cells, align="left", height=30)
-        ),
-        row=1, col=3
-    )
-
-    fig.add_trace(
-        go.Table(
-            header=dict(values=table_headers, align="left"),
-            cells=dict(values=table2_cells, align="left", height=30)
-        ),
-        row=2, col=3
-    )
+    if save_rc_file:
+        import os
+        os.makedirs(rc_folder, exist_ok=True)
+        var_list = "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"\
+                   "b_msh_x,b_msh_y,b_msh_z,b_imf_x,b_imf_y,"\
+                   "b_imf_z,dipole,imf_clock_angle,p_dyn"
+        
+        data_dict = {
+            "mms_spc_num": mms_probe_num,
+            "date_from": t_range[0],
+            "date_to": t_range[1],
+            "spc_pos_x": mms_sc_pos[0],
+            "spc_pos_y": mms_sc_pos[1],
+            "spc_pos_z": mms_sc_pos[2],
+            "b_msh_x": b_msh[0],
+            "b_msh_y": b_msh[1],
+            "b_msh_z": b_msh[2],
+            "b_imf_x": b_imf[0],
+            "b_imf_y": b_imf[1],
+            "b_imf_z": b_imf[2],
+            "dipole": dipole_tilt_angle * 180 / np.pi if dipole_tilt_angle is not None else np.nan,
+            "imf_clock_angle": imf_clock_angle if imf_clock_angle is not None else np.nan,
+            "p_dyn": p_dyn if p_dyn is not None else np.nan
+        }
+        
+        try:
+            if df_jet_reversal is not None:
+                for key in df_jet_reversal.keys():
+                    if key not in data_dict.keys():
+                        data_dict[key] = df_jet_reversal[key]
+                        var_list += "," + key
+        except Exception:
+            pass
+            
+        for i, dist_rc in enumerate(dist_rc_list):
+            method_used = c_label[i] if c_label[i] else f"model_{i}"
+            key_name = f"r_rc_{method_used}"
+            data_dict[key_name] = np.round(dist_rc, 3)
+            var_list += "," + key_name
+            
+        rc_path = os.path.join(rc_folder, rc_file_name)
+        if not os.path.exists(rc_path):
+            with open(rc_path, "w") as f:
+                f.write(var_list + "\n")
+                
+        with open(rc_path, "a") as f:
+            for key in data_dict.keys():
+                try:
+                    f.write(f"{np.round(float(data_dict[key]), 3)},")
+                except Exception:
+                    f.write(f"{data_dict[key]},")
+            f.write("\n")
 
     # Define toggle button based on initial dark_mode
     if dark_mode:
@@ -1778,15 +1789,36 @@ def ridge_finder_multiple_interactive(
         initial_label = "☀️"
         args1 = [{"template": pio.templates["plotly_dark"], "updatemenus[0].buttons[0].label": "🌙"}]
         args2 = [{"template": pio.templates["plotly_white"], "updatemenus[0].buttons[0].label": "☀️"}]
-        
-    num_traces = len(fig.data)
-    visible_without_table = [True] * (num_traces - 2) + [False, False]
-    visible_with_table = [True] * num_traces
+
+    # Add center text annotation
+    info_text = (
+        f"Time range: {t_range[0]} - {t_range[1]}<br>"
+        f"Model: {tsy_model.upper()}<br>"
+        f"B_imf: [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT<br>"
+        f"MMS Pos: [{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}] R_E<br>"
+        f"Dipole Tilt: {dipole_tilt_angle:.2f}°<br>"
+        f"Clock Angle: {imf_clock_angle:.2f}°"
+    )
+    
+    fig.add_annotation(
+        text=info_text,
+        xref="paper", yref="paper",
+        x=0.5, y=1.15,
+        xanchor="center", yanchor="top",
+        showarrow=False,
+        font=dict(size=14),
+        bordercolor="gray",
+        borderwidth=1,
+        bgcolor="rgba(0,0,0,0.5)" if dark_mode else "rgba(255,255,255,0.8)",
+        align="center"
+    )
 
     # Update layout for interactive plot
     fig.update_layout(
-        title=f"Time range: {t_range[0]} - {t_range[1]}<br>B_imf = [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT",
         template="plotly_dark" if dark_mode else "plotly_white",
+        width=1200,
+        height=1300,
+        margin=dict(t=180),
         autosize=True,
         updatemenus=[
             dict(
@@ -1801,22 +1833,7 @@ def ridge_finder_multiple_interactive(
                 xanchor="right",
                 y=1.15,
                 yanchor="top"
-            ),
-            dict(
-                type="buttons",
-                direction="left",
-                buttons=list([
-                    dict(args=[{"visible": [False]}, {"updatemenus[1].buttons[0].label": "☐ Show Table"}, [num_traces - 2, num_traces - 1]], 
-                         args2=[{"visible": [True]}, {"updatemenus[1].buttons[0].label": "☑ Show Table"}, [num_traces - 2, num_traces - 1]], 
-                         label="☑ Show Table", method="update")
-                ]),
-                pad={"r": 10, "t": 10},
-                showactive=False,
-                x=0.9,
-                xanchor="right",
-                y=1.15,
-                yanchor="top"
-            ),
+            )
         ]
     )
 
@@ -1837,4 +1854,4 @@ def ridge_finder_multiple_interactive(
         except Exception as e:
             print(e)
             
-    return y_vals, x_intr_vals_list, y_intr_vals_list
+    return fig

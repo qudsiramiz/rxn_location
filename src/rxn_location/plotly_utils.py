@@ -140,6 +140,7 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
                                 x=times, y=y_data[:, col], mode="lines", name=name, legend=legend_id
                             ),
                             row=i + 1,
+                            
                             col=1,
                         )
 

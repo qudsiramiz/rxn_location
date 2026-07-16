@@ -30,3 +30,10 @@ data_sw_clock_angle: Clock Angle
 data_sw_sym_h: Sym-H
 data_sw_tp: T_p (sw)
 data_sw_np: n_p (sw)
+
+data_sw_b_imf_gsm_x: B_imf_gsm_x
+data_sw_b_imf_gsm_y: B_imf_gsm_y
+data_sw_b_imf_gsm_z: B_imf_gsm_z
+data_sw_v_imf_gse_x: V_imf_gse_x
+data_sw_v_imf_gse_y: V_imf_gse_y
+data_sw_v_imf_gse_z: V_imf_gse_z

@@ -80,7 +80,7 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
             if data is None:
                 continue
 
-            times = [datetime.datetime.utcfromtimestamp(t) for t in data.times]
+            times = [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in data.times]
 
             # Check if it's a spectrogram (2D data with v)
             if hasattr(data, "v") or hasattr(data, "v1") or hasattr(data, "v2"):

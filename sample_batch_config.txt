@@ -1,0 +1,48 @@
+# This is a sample configuration file for the batch CLI tool.
+# You can pass this entire file to the python script using the @ prefix:
+#    poetry run python examples/batch_statistics_cli.py @sample_batch_config.txt
+#
+# Each argument and its value must be on separate lines.
+
+# 1. Path to the input file containing the list of times (required)
+--input
+data/jet_reconnection_list_test.txt
+
+# 2. Advanced Jet Reversal Parameters
+--dt
+300
+--jet_len
+3
+--t_delta
+2
+--max_retries
+5
+
+# 3. Advanced 3D Reconnection Grid Parameters
+--m_p
+0.5
+--dr
+0.25
+--limits
+20
+
+# 4. MMS and Spacecraft Parameters
+--probe
+3
+--data_rate
+brst
+--tsy_model
+T96
+
+# 5. Output and Plotting Formatting
+--format
+png
+--outdir
+./figures_batch
+--csv_name
+my_batch_reconnection_stats.csv
+--log-level
+WARNING
+
+# 6. Optional Flags (do not put a value on the next line for flags, just the flag itself)
+--plot-seaborn

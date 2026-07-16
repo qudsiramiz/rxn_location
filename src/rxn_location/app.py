@@ -35,6 +35,7 @@ try:
     from rxn_location.rx_model_funcs import rx_model, ridge_finder_multiple_interactive
     from rxn_location.app_stats_plots import generate_statistics_plots
     from rxn_location.app_stats_plots_interactive import generate_interactive_plots
+    from rxn_location.app_seaborn_plots import generate_seaborn_jointplots
     from rxn_location import master_jet_list as mjl
     from rxn_location import presets as preset_mgr
 except ImportError as e:
@@ -43,7 +44,12 @@ except ImportError as e:
     )
 
 # Page config
-st.set_page_config(page_title="RXN Location GUI", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="RXN Location Dash", page_icon="🌍", layout="wide", initial_sidebar_state="expanded"
+)
+
+if "show_toast" in st.session_state:
+    st.toast(st.session_state.pop("show_toast"))
 
 AUTO_SAVE_PATH = Path(os.path.expanduser("~")) / ".rxn_location_auto_save.pkl"
 
@@ -842,9 +848,12 @@ def main():
                     }
                     st.session_state["history"]["jet_checks"].append(run_record)
                     st.session_state["jet_view_idx"] = -1  # reset view to latest
+                    if "sel_jet" in st.session_state:
+                        del st.session_state["sel_jet"]
                     save_auto_session()
 
                     # --- Master List Integration (Features #1-#4) ---
+                    sw_params = None
                     if jet_detection and data_dict and not skip_master_add:
                         # Compute R_rc automatically in the background before saving (Option B)
                         success_rm, dist_rc_dict, sw_params = run_recon_models(c_time, save_data=False, det=data_dict)
@@ -877,6 +886,12 @@ def main():
                             data_dict["sw_sym_h"] = sw_params["sym_h"]
                             data_dict["sw_clock_angle"] = sw_params["imf_clock_angle"]
                             data_dict["sw_p_dyn"] = sw_params["p_dyn"]
+                            
+                            import math
+                            bx, by, bz = sw_params["b_imf"][0], sw_params["b_imf"][1], sw_params["b_imf"][2]
+                            b_mag = math.sqrt(bx**2 + by**2 + bz**2)
+                            if b_mag > 0:
+                                data_dict["sw_cone_angle"] = math.acos(bx / b_mag) * 180 / math.pi
                             
                         params = _get_current_run_params()
                         was_added, existing = mjl.add_jet(
@@ -1030,6 +1045,8 @@ def main():
                     }
                     st.session_state["history"]["recon_models"].append(run_record)
                     st.session_state["rxn_view_idx"] = -1
+                    if "sel_rxn" in st.session_state:
+                        del st.session_state["sel_rxn"]
                     save_auto_session()
 
                     return True, dist_rc_dict, sw_params
@@ -1043,6 +1060,25 @@ def main():
 
     with sidebar_actions:
         st.header("Actions")
+
+        # --- Handle Pending Quick Run ---
+        if "pending_quick_run" in st.session_state:
+            entry = st.session_state.pop("pending_quick_run")
+            from dateutil import parser
+            import pytz
+            c_time = parser.parse(st.session_state["crossing_time_str"])
+            if c_time.tzinfo is None:
+                c_time = c_time.replace(tzinfo=pytz.utc)
+                
+            s1, det = run_jet_check(c_time, skip_master_add=True)
+            if s1:
+                s2, *_ = run_recon_models(c_time, det=det)
+                if s2:
+                    st.success(f"Models successfully generated for jet at {entry.get('jet_time', 'N/A')}!")
+                else:
+                    st.error(f"Failed to run models for jet at {entry.get('jet_time', 'N/A')}.")
+            else:
+                st.error("Jet check failed, cannot run models.")
 
         # --- Feature #5: Duplicate Dialog ---
         # Check for nearby jets before running, show dialog if found
@@ -1062,7 +1098,10 @@ def main():
                 else:
                     success, jet_det = run_jet_check(crossing_time)
                     if success:
-                        st.success("Jet Reversal check completed!")
+                        if jet_det:
+                            st.toast("✅ Jet Reversal check completed! Jet found.", icon="✅")
+                        else:
+                            st.toast("❌ Jet Reversal check completed. No jet found at this exact time.", icon="❌")
             else:
                 st.error("Invalid crossing time.")
 
@@ -1299,20 +1338,27 @@ def main():
             col_a, col_b, col_c, col_d = st.columns(4)
             if col_a.button("Generate Jet Reversal Plot Only", key="dup_jet_only"):
                 st.session_state["duplicate_dialog_state"] = None
-                run_jet_check(c_time, skip_master_add=True)
-                st.success("Jet Reversal plot generated!")
+                success, jet_det = run_jet_check(c_time, skip_master_add=True)
+                if success:
+                    if jet_det:
+                        st.toast("✅ Jet Reversal plot generated!", icon="✅")
+                    else:
+                        st.toast("❌ Jet Reversal check completed. No jet found.", icon="❌")
+                st.rerun()
 
             if col_b.button("Generate Reconnection Model Only", key="dup_rxn_only"):
                 st.session_state["duplicate_dialog_state"] = None
                 run_recon_models(c_time)
-                st.success("Reconnection Model generated!")
+                st.toast("✅ Reconnection Model generated!", icon="✅")
+                st.rerun()
 
             if col_c.button("Generate Both", key="dup_both"):
                 st.session_state["duplicate_dialog_state"] = None
                 s1, det = run_jet_check(c_time, skip_master_add=True)
                 s2 = run_recon_models(c_time, det=det)
                 if s1 and s2:
-                    st.success("Both plots generated!")
+                    st.toast("✅ Both plots generated!", icon="✅")
+                st.rerun()
 
             if col_d.button("Skip / Cancel", key="dup_skip"):
                 st.session_state["duplicate_dialog_state"] = None
@@ -1525,34 +1571,56 @@ def main():
                 if isinstance(tp_val, (float, int)):
                     tp_val = f"{tp_val:.1f}"
                     
-                # Clock Angle & P_dyn
+                # Clock Angle, P_dyn, Cone Angle
                 clock_angle = entry.get("data_sw_clock_angle", "N/A")
                 if isinstance(clock_angle, (float, int)):
                     clock_angle = f"{clock_angle:.1f}"
                 p_dyn = entry.get("data_sw_p_dyn", "N/A")
                 if isinstance(p_dyn, (float, int)):
                     p_dyn = f"{p_dyn:.2f}"
+                cone_angle = entry.get("data_sw_cone_angle", entry.get("data_cone_angle", "N/A"))
+                if isinstance(cone_angle, (float, int)):
+                    cone_angle = f"{cone_angle:.1f}"
+
+                def _fmt_rc(key_name):
+                    val = entry.get(key_name)
+                    if val is None or (isinstance(val, float) and math.isnan(val)):
+                        return "N/A"
+                    return f"{val:.2f}"
+
+                # Compute average Recon. Dist. if models exist
+                rc_keys = [
+                    "data_r_rc_Shear", 
+                    "data_r_rc_Bisection Field", 
+                    "data_r_rc_Exhaust Velocity", 
+                    "data_r_rc_Reconnection Energy"
+                ]
+                rc_vals = []
+                for k in rc_keys:
+                    v = entry.get(k)
+                    if v is not None and not (isinstance(v, float) and math.isnan(v)):
+                        rc_vals.append(v)
+                
+                recon_dist_str = f"{sum(rc_vals)/len(rc_vals):.2f}" if rc_vals else "N/A"
+
+                # Format Model Parameters
+                mod_params = (
+                    f"Model: {entry.get('tsy_model', 'N/A')}, "
+                    f"m_p: {entry.get('m_p', 'N/A')}, "
+                    f"dr: {entry.get('dr', 'N/A')}"
+                )
 
                 row = {
                     "Select": False,
-                    "#": i + 1,
-                    "Date": date_val,
-                    "Jet Time": j_time_val,
+                    "Event Index": i + 1,
                     "Crossing Time": c_time_val,
-                    "MMS (X, Y, Z, R) [GSM]": pos_str,
-                    "B_IMF (Bx, By, Bz, |B|) [nT]": b_str,
-                    "Nₚ [cm⁻³]": np_val,
-                    "Tₚ [K]": tp_val,
-                    "V_IMF (Vx, Vy, Vz, |V|) [km/s]": v_str,
-                    "Clock Angle [°]": clock_angle,
-                    "P_dyn [nPa]": p_dyn,
-                    "Probe": entry.get("mms_probe", entry.get("data_Probe", "N/A")),
-                    "Shear Angle": entry.get("data_angle_b_lmn_vec_msp_msh_median", "N/A"),
+                    "MMS Probe": entry.get("mms_probe", entry.get("data_Probe", "N/A")),
+                    "dt (s)": entry.get("dt", "N/A"),
+                    "Jet Length": entry.get("jet_len", "N/A"),
                     "Data Rate": entry.get("data_rate", "N/A"),
-                    "Level": entry.get("level", "N/A"),
-                    "Beta MSH": entry.get("data_beta_msh_mean", "N/A"),
-                    "Beta MSP": entry.get("data_beta_msp_mean", "N/A"),
-                    "Added At": entry.get("added_at", "N/A"),
+                    "Recon. Dist. (Re)": recon_dist_str,
+                    "Cone Angle (deg)": cone_angle,
+                    "Model Parameters": mod_params,
                     "_original_index": i,
                 }
                 display_data.append(row)
@@ -1707,26 +1775,10 @@ def main():
                     save_auto_session()
                     
                     if load_and_run:
-                        from dateutil import parser
-                        import pytz
-                        c_time = parser.parse(st.session_state["crossing_time_str"])
-                        if c_time.tzinfo is None:
-                            c_time = c_time.replace(tzinfo=pytz.utc)
-                            
-                        # Run checks with skip_master_add=True so it doesn't duplicate
-                        s1, det = run_jet_check(c_time, skip_master_add=True)
-                        s2, *_ = run_recon_models(c_time, det=det)
-                        
-                        if s1 and s2:
-                            st.success(f"Models successfully generated for jet at {entry.get('jet_time', 'N/A')}!")
-                        else:
-                            st.error(f"Failed to run models for jet at {entry.get('jet_time', 'N/A')}.")
+                        st.session_state["pending_quick_run"] = entry
                         st.rerun()
                     else:
-                        st.success(
-                            f"Loaded parameters from jet at {entry.get('jet_time', 'N/A')}. "
-                            f"Switch to the Controls tab to run analyses."
-                        )
+                        st.session_state["show_toast"] = f"Loaded parameters from jet at {entry.get('jet_time', 'N/A')}."
                         st.rerun()
 
             # --- Import Master List ---
@@ -1973,15 +2025,26 @@ def main():
                 # Plot selection
                 # Plot selection
                 base_var_options = {
-                    "b_imf_z": r"IMF Bz",
-                    "b_imf_x": r"IMF Bx",
-                    "b_imf_y": r"IMF By",
-                    "imf_clock_angle": r"IMF Clock Angle",
-                    "cone_angle": r"Cone Angle",
-                    "p_dyn": r"Dynamic Pressure",
-                    "msh_msp_shear": r"Shear Angle",
-                    "r_rc": "Reconnection Distance",
-                    "delta_beta": "Delta Beta",
+                    "b_imf_z": r"IMF $B_z$ [nT]",
+                    "b_imf_x": r"IMF $B_x$ [nT]",
+                    "b_imf_y": r"IMF $B_y$ [nT]",
+                    "B_imf_gsm_z": r"IMF $B_z$ [nT]",
+                    "B_imf_gsm_x": r"IMF $B_x$ [nT]",
+                    "B_imf_gsm_y": r"IMF $B_y$ [nT]",
+                    "sw_b_imf_gsm_z": r"IMF $B_z$ [nT]",
+                    "sw_b_imf_gsm_x": r"IMF $B_x$ [nT]",
+                    "sw_b_imf_gsm_y": r"IMF $B_y$ [nT]",
+                    "imf_clock_angle": r"IMF Clock Angle ($^\circ$)",
+                    "cone_angle": r"Cone Angle ($\cos^{-1}(B_x/|\mathbf{B}|)$) [$^\circ$]",
+                    "p_dyn": r"Dynamic Pressure [nPa]",
+                    "msh_msp_shear": r"Shear Angle ($^\circ$)",
+                    "r_rc": r"Reconnection Distance [$R_E$]",
+                    "delta_beta": r"$\Delta \beta$",
+                    "bb": r"IMF $B_y/|\mathbf{B}|$",
+                    "beta_msh_mean": r"$\beta_{\rm p}$",
+                    "np_msp_median": r"$N_p$ (MSP) [cm$^{-3}$]",
+                    "tp_para_msp_median": r"$Tp_{\parallel}$ [$10^6$ K]",
+                    "tp_perp_msp_median": r"$Tp_{\perp}$ [$10^6$ K]",
                 }
 
                 # Dynamically load from key_list.md
@@ -2025,7 +2088,7 @@ def main():
 
                 available_vars = list(var_options.keys())
                 default_x = ["b_imf_z"] if "b_imf_z" in available_vars else ([available_vars[0]] if available_vars else [])
-                default_y = ["r_rc"] if "r_rc" in available_vars else ([available_vars[1]] if len(available_vars) > 1 else default_x)
+                default_y = ["b_imf_y"] if "b_imf_y" in available_vars else ([available_vars[1]] if len(available_vars) > 1 else default_x)
 
                 plots_to_gen = st.multiselect(
                     "Select Figures to Generate",
@@ -2035,21 +2098,36 @@ def main():
                         "2D Histograms",
                         "Scatter Plots",
                         "MMS Location Scatter Plot",
+                        "Seaborn Joint-Plots",
                     ],
-                    default=["Scatter Plots"],
+                    default=["Seaborn Joint-Plots"],
                 )
+
+                # Extra option for seaborn plots
+                marker_size_var = "None"
+                if "Seaborn Joint-Plots" in plots_to_gen:
+                    marker_options = ["None"] + available_vars
+                    default_marker = "r_rc" if "r_rc" in available_vars else "None"
+                    marker_size_var = st.selectbox(
+                        "Variable for Marker Size (Z-parameter)",
+                        marker_options,
+                        format_func=lambda x: var_options.get(x, x) if x != "None" else "Constant (No Scaling)",
+                        index=marker_options.index(default_marker),
+                    )
 
                 x_vars = st.multiselect(
                     "X-Axis Variable(s)",
                     available_vars,
                     format_func=lambda x: var_options[x],
                     default=default_x,
+                    key="stats_x_vars_v2",
                 )
                 y_vars = st.multiselect(
                     "Y-Axis Variable(s)",
                     available_vars,
                     format_func=lambda x: var_options[x],
                     default=default_y,
+                    key="stats_y_vars_v2",
                 )
 
                 if st.button("Generate Selected Figures"):
@@ -2061,33 +2139,60 @@ def main():
                                 f"Please select the same number of X and Y variables for pairwise plotting (you selected {len(x_vars)} X and {len(y_vars)} Y)."
                             )
                         else:
-                            for x_var, y_var in zip(x_vars, y_vars):
-                                if len(x_vars) > 1:
-                                    st.markdown(f"### {var_options[x_var]} vs {var_options[y_var]}")
+                            # --- Interactive Plotly figures ---
+                            plotly_plots = [
+                                p for p in plots_to_gen if p != "Seaborn Joint-Plots"
+                            ]
+                            if plotly_plots:
+                                for x_var, y_var in zip(x_vars, y_vars):
+                                    if len(x_vars) > 1:
+                                        st.markdown(f"### {var_options[x_var]} vs {var_options[y_var]}")
 
-                                figures, err = generate_interactive_plots(
-                                    filtered_csv_path,
-                                    dark_mode=is_dark_mode,
-                                    selected_plots=plots_to_gen,
-                                    x_var=x_var,
-                                    y_var=y_var,
-                                )
-                                if err:
-                                    st.error(err)
-                                else:
-                                    for title, fig in figures.items():
-                                        if len(x_vars) == 1:
-                                            st.write(f"### {title}")
-                                        else:
-                                            st.write(f"**{title}**")
+                                    figures, err = generate_interactive_plots(
+                                        filtered_csv_path,
+                                        dark_mode=is_dark_mode,
+                                        selected_plots=plotly_plots,
+                                        x_var=x_var,
+                                        y_var=y_var,
+                                    )
+                                    if err:
+                                        st.error(err)
+                                    else:
+                                        for title, fig in figures.items():
+                                            if len(x_vars) == 1:
+                                                st.write(f"### {title}")
+                                            else:
+                                                st.write(f"**{title}**")
 
-                                        if fig:
-                                            st.plotly_chart(
-                                                fig,
-                                                width="stretch",
-                                            )
-                                        else:
-                                            st.warning(f"Could not generate {title}")
+                                            if fig:
+                                                st.plotly_chart(
+                                                    fig,
+                                                    width="stretch",
+                                                )
+                                            else:
+                                                st.warning(f"Could not generate {title}")
+
+                            # --- Static Seaborn joint-plots ---
+                            if "Seaborn Joint-Plots" in plots_to_gen:
+                                for x_var, y_var in zip(x_vars, y_vars):
+                                    st.markdown(
+                                        f"### Seaborn Joint-Plot: "
+                                        f"{var_options.get(x_var, x_var)} vs "
+                                        f"{var_options.get(y_var, y_var)}"
+                                    )
+                                    try:
+                                        sb_fig = generate_seaborn_jointplots(
+                                            df_full=filtered_df,
+                                            x_key=x_var,
+                                            y_key=y_var,
+                                            x_label=var_options.get(x_var, x_var),
+                                            y_label=var_options.get(y_var, y_var),
+                                            dark_mode=is_dark_mode,
+                                            marker_size_var=marker_size_var,
+                                        )
+                                        st.pyplot(sb_fig)
+                                    except Exception as e:
+                                        st.error(f"Error generating Seaborn Joint-Plot: {e}")
 
 
 if __name__ == "__main__":

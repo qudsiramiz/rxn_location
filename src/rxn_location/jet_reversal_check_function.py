@@ -128,7 +128,7 @@ def jet_reversal_check(
     mms_fpi_time_unix = spd.get_data(mms_fpi_varnames[0])[0]
     # Convert the time to a datetime object
     mms_fpi_time_local = pd.to_datetime(mms_fpi_time_unix, unit="s")
-    mms_fpi_time = mms_fpi_time_local.tz_localize(pytz.utc)
+    mms_fpi_time = mms_fpi_time_local.tz_localize(None).tz_localize(pytz.utc)
 
     mms_fpi_numberdensity = spd.get_data(mms_fpi_varnames[0])[1]
     _ = spd.get_data(mms_fpi_varnames[1])[1:4][0]
@@ -254,7 +254,7 @@ def jet_reversal_check(
     mms_fgm_time = spd.get_data(f"mms{probe}_fgm_b_gsm_srvy_{level}")[0]
     # Convert the time to a datetime object
     mms_fgm_time = pd.to_datetime(mms_fgm_time, unit="s")
-    mms_fgm_time = mms_fgm_time.tz_localize(pytz.utc)
+    mms_fgm_time = mms_fgm_time.tz_localize(None).tz_localize(pytz.utc)
 
     mms_fgm_b_gsm = spd.get_data(f"mms{probe}_fgm_b_gsm_srvy_{level}")[1:4][0]
     mms_fgm_b_gse = spd.get_data(f"mms{probe}_fgm_b_gse_srvy_{level}")[1:4][0]
@@ -310,7 +310,7 @@ def jet_reversal_check(
 
     # Make the time index timezone aware
     try:
-        df_mms.index = df_mms.index.tz_localize(pytz.utc)
+        df_mms.index = df_mms.index.tz_localize(None).tz_localize(pytz.utc)
     except Exception:
         if verbose:
             print("\033[1;31m Timezone conversion failed \033[0m \n")
@@ -709,7 +709,7 @@ def check_jet_location(
         'l' component of the velocity
     """
     # Compute the number of points corresponding to jet_len
-    n_points_jet = int(jet_len / time_cadence_median)
+    n_points_jet = max(1, int(jet_len / time_cadence_median))
 
     # Define the distance within which maximum and minimum values of jet velocity must lie
     # to be considered as a jet (within 30 seconds)
@@ -1280,7 +1280,7 @@ def tplot_fnc(
             (msh_time_unix, "blue"),
             (t_jet_center_unix, "green"),
         ]:
-            t_dt = datetime.datetime.utcfromtimestamp(unix_t)
+            t_dt = datetime.datetime.fromtimestamp(unix_t, datetime.timezone.utc)
             fig.add_vline(x=t_dt, line_dash="dash", line_color=color, line_width=2)
 
         fig.update_layout(title=f"Jet Detection for MMS{probe} {data_rate} data")

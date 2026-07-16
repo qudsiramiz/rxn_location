@@ -1146,7 +1146,7 @@ def get_sw_params(
     omni_t_p = spd.get_data(omni_vars[8])[1]
 
     # Convert omni_time to datetime objects from unix time
-    omni_time_datetime = [datetime.datetime.utcfromtimestamp(t) for t in omni_time]
+    omni_time_datetime = [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in omni_time]
     # Get trange in datetime format
     omni_trange_time_object = [pd.to_datetime(trange[0]), pd.to_datetime(trange[1])]
     # Add utc as timezone to omni_trange_time_object
@@ -1177,11 +1177,14 @@ def get_sw_params(
             mms_mec_trange[0].strftime("%Y-%m-%d %H:%M:%S"),
             mms_mec_trange[1].strftime("%Y-%m-%d %H:%M:%S"),
         ]
-        # Convert mms time range to datetime
-        mms_trange_time_object = [pd.to_datetime(mms_trange[0]), pd.to_datetime(mms_trange[1])]
+        # Convert mms time range to datetime and localize to UTC
+        mms_trange_time_object = [
+            pd.to_datetime(mms_trange[0]).replace(tzinfo=datetime.timezone.utc),
+            pd.to_datetime(mms_trange[1]).replace(tzinfo=datetime.timezone.utc),
+        ]
         mms_mec_trange_time_object = [
-            pd.to_datetime(mms_mec_trange[0]),
-            pd.to_datetime(mms_mec_trange[1]),
+            pd.to_datetime(mms_mec_trange[0]).replace(tzinfo=datetime.timezone.utc),
+            pd.to_datetime(mms_mec_trange[1]).replace(tzinfo=datetime.timezone.utc),
         ]
 
         mms_mec_varnames = [f"mms{mms_probe_num}_mec_r_gsm"]
@@ -1196,7 +1199,7 @@ def get_sw_params(
         )
         mms_mec_time = spd.get_data(f"mms{mms_probe_num}_mec_r_gsm")[0]
         # Convert mms fgm time to datetime
-        mms_mec_time = np.array([datetime.datetime.utcfromtimestamp(t) for t in mms_mec_time])
+        mms_mec_time = np.array([datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_mec_time])
 
         # Position of MMS in GSM coordinates in earth radii (r_e) units
         r_e = 6378.137  # Earth radius in km
@@ -1216,7 +1219,7 @@ def get_sw_params(
         mms_fgm_b_gsm = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[1:4][0]
         mms_fgm_time = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[0]
         # Convert mms fgm time to datetime
-        mms_fgm_time = np.array([datetime.datetime.utcfromtimestamp(t) for t in mms_fgm_time])
+        mms_fgm_time = np.array([datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_fgm_time])
 
         try:
             data_rate = "fast"
@@ -1239,7 +1242,7 @@ def get_sw_params(
             )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
-            mms_fpi_time = np.array([datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time])
+            mms_fpi_time = np.array([datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time])
             mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
                 0
             ]
@@ -1269,7 +1272,7 @@ def get_sw_params(
             )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
-            mms_fpi_time = [datetime.datetime.utcfromtimestamp(x) for x in mms_fpi_time]
+            mms_fpi_time = [datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time]
             mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
                 0
             ]
@@ -1301,8 +1304,8 @@ def get_sw_params(
         index=omni_time_datetime,
     )
 
-    # Add UTC as time zone to the index of omni_df
-    omni_df.index = omni_df.index.tz_localize("UTC")
+    # Add UTC as time zone to the index of omni_df, handling both naive and aware datetimes safely
+    omni_df.index = omni_df.index.tz_localize(None).tz_localize("UTC")
 
     # Get the mean values of the parameters from OMNI data for the time range betwwen
     time_imf = np.nanmean(
@@ -1332,7 +1335,7 @@ def get_sw_params(
             f"which is out of range in which model is valid (-18 nT < b_imf_z < 15 nT)"
         )
 
-    time_imf_hrf = datetime.datetime.utcfromtimestamp(time_imf)
+    time_imf_hrf = datetime.datetime.fromtimestamp(time_imf, datetime.timezone.utc)
 
     v_imf = [vx_imf, vy_imf, vz_imf]
     b_imf = [b_imf_x, b_imf_y, b_imf_z]
@@ -2217,7 +2220,7 @@ def ridge_finder_multiple_interactive(
     dist_rc_dict = {}
     for i, dist_rc in enumerate(dist_rc_list):
         method_used = c_label[i] if c_label[i] else f"model_{i}"
-        key_name = f"data_r_rc_{method_used}"
+        key_name = f"r_rc_{method_used}"
         dist_rc_dict[key_name] = np.round(dist_rc, 3) if not np.isnan(dist_rc) else np.nan
 
     return fig, dist_rc_dict

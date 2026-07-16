@@ -71,13 +71,14 @@ poetry shell
 The easiest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize 3D reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
 
 **Recent GUI Features include:**
-- **Master Jet List**: Persistent JSON storage of detected jets with automatic 2-minute deduplication across sessions.
-- **Interactive Data Table**: View, sort, manually prune, and export (CSV/JSON/Pickle) your master jet list.
+- **Master Jet List**: Persistent JSON storage of detected jets with automatic 2-minute deduplication across sessions. Now automatically fetches and saves contextual Solar Wind parameters (B_IMF, V_IMF, Np, Tp, Sym-H, Clock Angle, P_dyn).
+- **Interactive Data Table**: View, sort, manually prune, and export (CSV/JSON/Pickle) your master jet list. Features high-quality Unicode formatting for variables.
 - **Duplicate Jet Dialog**: Safety checks when generating models to prevent processing the same jet multiple times.
 - **Parameter Presets**: Save and load your favorite sidebar configurations.
 - **Data Cache Dashboard**: Monitor and clean up the local PySPEDAS data cache directly from the sidebar.
 - **Dynamic Plot Filtering**: Filter statistics by IMF Bz, dynamic pressure, and shear angle before plotting.
-- **Quick Re-run**: Instantly load parameters from a previously saved jet into the dashboard.
+- **Quick Re-run & Auto-Run**: Instantly load parameters from a previously saved jet into the dashboard ("Load into Dashboard"), or use the new "Load & Run Models" button to auto-execute the entire pipeline in one click.
+- **Batch Processing from File Upload**: In addition to time-range and target-count batch processing, "Statistics Mode" now accepts uploaded `.csv` or `.txt` files containing custom lists of timestamps. It leverages robust parsing to seamlessly run the jet reversal check and models on every timestamp provided.
 
 To launch the GUI, run the following command from the root directory:
 ```bash
@@ -90,6 +91,31 @@ In order to check for jet location in MMS data via command line, use the followi
 ```
 python -m jet_reversal_check.py
 ```
+
+#### Batch Processing via Command Line
+If you prefer not to use the GUI, you can completely automate the entire pipeline (Jet Reversal Check -> Reconnection Models -> Master Jet List logging) using the included batch statistics command-line script.
+
+1. **Prepare your input file**: Create a `.txt` or `.csv` file (e.g. `times_list.txt`) containing the timestamps you want to check, one per line.
+    ```text
+    2015-09-02 16:45:00
+    2015-09-02 17:30:00
+    2015-10-16 13:07:00
+    ```
+2. **Run the script**: Run `batch_statistics_cli.py` from the `examples/` folder and pass your input file.
+    ```bash
+    python examples/batch_statistics_cli.py --input times_list.txt --probe 3 --format html --outdir ./my_batch_figures
+    ```
+
+**Available Options:**
+- `-i`, `--input`: (Required) Path to your `.txt` or `.csv` list of times.
+- `--probe`: MMS probe number (1-4). Defaults to `3`.
+- `--tsy_model`: Tsyganenko model to use. Defaults to `T96`.
+- `--data_rate`: MMS data rate (`fast` or `brst`). Defaults to `fast`.
+- `--format`: Format for the saved plots (`html` for interactive Plotly, or `pdf`/`png` for static Matplotlib). Defaults to `html`.
+- `--outdir`: Directory to save the generated plots and CSV. Defaults to `./figures`.
+- `--log-level`: Set the terminal output verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Defaults to `INFO`.
+
+When run, the script will output its default configurations via a neat table, process each time, print the status, fetch Solar Wind parameters, generate the required plots, and intelligently skip logging duplicate jets to your persistent `~/.rxn_location_master_jets.json` file.
 
 NOTE: Some times, for whatever reason, the MMS data is not downloaded properly by PySPEDAS. In that
 case, please run the following command:

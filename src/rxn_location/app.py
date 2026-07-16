@@ -26,6 +26,7 @@ import zipfile
 import pytz
 import pickle
 import os
+import logging
 from pathlib import Path
 
 # Try importing the required project modules
@@ -33,6 +34,7 @@ try:
     from rxn_location.jet_reversal_check_function import jet_reversal_check
     from rxn_location.rx_model_funcs import rx_model, ridge_finder_multiple_interactive
     from rxn_location.app_stats_plots import generate_statistics_plots
+    from rxn_location.app_stats_plots_interactive import generate_interactive_plots
     from rxn_location import master_jet_list as mjl
     from rxn_location import presets as preset_mgr
 except ImportError as e:
@@ -268,7 +270,7 @@ def main():
             "Restore Session (.rxn_session)", type=["rxn_session", "pkl"]
         )
         if uploaded_file is not None:
-            if st.button("Load Session", use_container_width=True):
+            if st.button("Load Session", width="stretch"):
                 try:
                     loaded_state = pickle.load(uploaded_file)
                     st.session_state["history"] = loaded_state.get(
@@ -299,7 +301,7 @@ def main():
                 data=session_bytes,
                 file_name=f"session_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.rxn_session",
                 mime="application/octet-stream",
-                use_container_width=True,
+                width="stretch",
             )
         except Exception as e:
             st.error("Cannot serialize session.")
@@ -314,7 +316,7 @@ def main():
                 "Load a Preset", ["(none)"] + preset_names, key="preset_selector"
             )
             col_load, col_del = st.columns(2)
-            if col_load.button("Load Preset", use_container_width=True):
+            if col_load.button("Load Preset", width="stretch"):
                 if selected_preset and selected_preset != "(none)":
                     params = presets[selected_preset]
                     st.session_state["crossing_time_str"] = params.get(
@@ -332,7 +334,7 @@ def main():
                     st.success(f"Preset '{selected_preset}' loaded!")
                     st.rerun()
 
-            if col_del.button("Delete Preset", use_container_width=True):
+            if col_del.button("Delete Preset", width="stretch"):
                 if selected_preset and selected_preset != "(none)":
                     preset_mgr.delete_preset(selected_preset)
                     st.success(f"Preset '{selected_preset}' deleted.")
@@ -342,7 +344,7 @@ def main():
 
         st.markdown("---")
         new_preset_name = st.text_input("New Preset Name", key="new_preset_name")
-        if st.button("Save Current Settings as Preset", use_container_width=True):
+        if st.button("Save Current Settings as Preset", width="stretch"):
             if new_preset_name.strip():
                 # Collect current params from session state
                 current_params = {
@@ -393,6 +395,16 @@ def main():
         help="Toggle to show tooltip hints on optional parameters.",
     )
 
+    log_level = st.sidebar.selectbox(
+        "Log Level",
+        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        index=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"].index(st.session_state.get("preset_log_level", "INFO")),
+        help="Set the console logging output level (e.g. for PySPEDAS downloads)." if show_hints else None
+    )
+    st.session_state["preset_log_level"] = log_level
+    logging.getLogger().setLevel(getattr(logging, log_level))
+
+
     # --- Observation Parameters ---
     st.sidebar.header("Observation Parameters")
 
@@ -400,11 +412,19 @@ def main():
         "Crossing Time (UTC)", value=st.session_state.crossing_time_str
     )
     try:
-        crossing_time = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-        crossing_time = crossing_time.replace(tzinfo=pytz.utc)
-        st.session_state.crossing_time_str = date_str
+        from dateutil import parser
+        import pytz
+        crossing_time = parser.parse(date_str)
+        if crossing_time.tzinfo is None:
+            crossing_time = crossing_time.replace(tzinfo=pytz.utc)
+        # Normalize the string back to standard format
+        clean_str = crossing_time.strftime("%Y-%m-%d %H:%M:%S")
+        if date_str != clean_str:
+            st.session_state.crossing_time_str = clean_str
+            st.rerun()
+        st.session_state.crossing_time_str = clean_str
     except Exception as e:
-        st.sidebar.error("Invalid time format. Use YYYY-MM-DD HH:MM:SS")
+        st.sidebar.error("Invalid time format. Try YYYY-MM-DD HH:MM:SS")
         crossing_time = None
 
     mms_probe = st.sidebar.selectbox(
@@ -425,9 +445,10 @@ def main():
     st.sidebar.header("Statistics Mode Parameters")
     use_stats_mode = st.sidebar.checkbox("Enable Statistics Mode")
     stop_condition = st.sidebar.radio(
-        "Stop Condition", ["End Time", "Target Number of Jets"], disabled=not use_stats_mode
+        "Stop Condition", ["End Time", "Target Number of Jets", "From File List"], disabled=not use_stats_mode
     )
 
+    stats_uploaded_file = None
     if stop_condition == "End Time":
         stats_end_time_str = st.sidebar.text_input(
             "End Time (UTC)",
@@ -443,19 +464,29 @@ def main():
             stats_end_time = crossing_time
         target_jets = None
         end_str_safe = stats_end_time_str.replace(" ", "_").replace(":", "")
-    else:
+    elif stop_condition == "Target Number of Jets":
         target_jets = st.sidebar.number_input(
             "Number of Jets to Find", min_value=1, value=10, disabled=not use_stats_mode
         )
         stats_end_time = None
         end_str_safe = f"{target_jets}jets"
+    else:
+        stats_uploaded_file = st.sidebar.file_uploader(
+            "Upload Time List (.csv, .txt)",
+            type=["csv", "txt"],
+            disabled=not use_stats_mode,
+            help="Each line or row should contain a parseable time string." if show_hints else None,
+        )
+        target_jets = None
+        stats_end_time = None
+        end_str_safe = "filelist"
 
     stats_delta_mins = st.sidebar.number_input(
         "Time Delta (minutes)",
         min_value=1,
         value=15,
         help="Step size for the batch loop." if show_hints else None,
-        disabled=not use_stats_mode,
+        disabled=(not use_stats_mode) or (stop_condition == "From File List"),
     )
     start_str_safe = date_str.replace(" ", "_").replace(":", "")
     default_csv_name = f"reconnection_stats_{start_str_safe}_{end_str_safe}_{stats_delta_mins}m.csv"
@@ -478,7 +509,7 @@ def main():
             st.caption(f"Location: `{cache_dir}`")
 
             col_clear1, col_clear2 = st.columns(2)
-            if col_clear1.button("Clear All", use_container_width=True, key="cache_clear_all"):
+            if col_clear1.button("Clear All", width="stretch", key="cache_clear_all"):
                 try:
                     shutil.rmtree(cache_dir)
                     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -487,7 +518,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error clearing cache: {e}")
 
-            if col_clear2.button("Clear > 30 Days", use_container_width=True, key="cache_clear_old"):
+            if col_clear2.button("Clear > 30 Days", width="stretch", key="cache_clear_old"):
                 deleted = _clear_old_files(cache_dir, days=30)
                 st.success(f"Deleted {deleted} files older than 30 days.")
                 st.rerun()
@@ -815,6 +846,38 @@ def main():
 
                     # --- Master List Integration (Features #1-#4) ---
                     if jet_detection and data_dict and not skip_master_add:
+                        # Compute R_rc automatically in the background before saving (Option B)
+                        success_rm, dist_rc_dict, sw_params = run_recon_models(c_time, save_data=False, det=data_dict)
+                        if success_rm and dist_rc_dict:
+                            data_dict.update(dist_rc_dict)
+                        
+                        # Fallback to fetch SW params directly if recon models were skipped
+                        if not sw_params:
+                            try:
+                                from rx_model_funcs import get_sw_params
+                                trange_date_min = c_time - datetime.timedelta(minutes=30)
+                                trange_date_max = c_time + datetime.timedelta(minutes=30)
+                                trange_min_str = trange_date_min.strftime("%Y-%m-%d %H:%M:%S") + "Z"
+                                trange_max_str = trange_date_max.strftime("%Y-%m-%d %H:%M:%S") + "Z"
+                                omni_lvl = st.session_state.get("omni_level", "hro_1min").split("_")[0]
+                                probe_num = str(st.session_state.get("mms_probe", 3))
+                                sw_params = get_sw_params(trange=[trange_min_str, trange_max_str], omni_level=omni_lvl, mms_probe_num=probe_num)
+                            except Exception as e:
+                                print(f"Error fetching OMNI SW params: {e}")
+
+                        if sw_params:
+                            data_dict["sw_b_imf_gsm_x"] = sw_params["b_imf"][0]
+                            data_dict["sw_b_imf_gsm_y"] = sw_params["b_imf"][1]
+                            data_dict["sw_b_imf_gsm_z"] = sw_params["b_imf"][2]
+                            data_dict["sw_v_imf_gse_x"] = sw_params["v_imf"][0]
+                            data_dict["sw_v_imf_gse_y"] = sw_params["v_imf"][1]
+                            data_dict["sw_v_imf_gse_z"] = sw_params["v_imf"][2]
+                            data_dict["sw_np"] = sw_params["np"]
+                            data_dict["sw_tp"] = sw_params["t_p"]
+                            data_dict["sw_sym_h"] = sw_params["sym_h"]
+                            data_dict["sw_clock_angle"] = sw_params["imf_clock_angle"]
+                            data_dict["sw_p_dyn"] = sw_params["p_dyn"]
+                            
                         params = _get_current_run_params()
                         was_added, existing = mjl.add_jet(
                             st.session_state["master_jets"],
@@ -849,11 +912,11 @@ def main():
                 det (DataFrame): Existing jet detection parameters to use as background context.
 
             Returns:
-                bool: True if successful, False otherwise.
+                tuple: (bool success, dict dist_rc_dict, dict sw_params)
             """
             if len(recon_models) == 0:
                 st.error("Please select at least one reconnection model.")
-                return False
+                return False, None, None
             with st.spinner(
                 f"Calculating Reconnection Models for MMS{mms_probe} at {c_time.strftime('%H:%M:%S')} (this may take a while)..."
             ):
@@ -888,7 +951,7 @@ def main():
                     res = rx_model(**model_inputs)
 
                     if not res:
-                        return False
+                        return False, None, None
 
                     images = []
                     c_labels = []
@@ -949,7 +1012,7 @@ def main():
                         "df_jet_reversal": det,
                     }
 
-                    rx_fig = ridge_finder_multiple_interactive(**figure_inputs)
+                    rx_fig, dist_rc_dict = ridge_finder_multiple_interactive(**figure_inputs)
 
                     # Record history
                     run_record = {
@@ -969,10 +1032,10 @@ def main():
                     st.session_state["rxn_view_idx"] = -1
                     save_auto_session()
 
-                    return True
+                    return True, dist_rc_dict, sw_params
                 except Exception as e:
                     st.error(f"Error running Reconnection Models: {e}")
-            return False
+            return False, None, None
 
     # =========================================================================
     # SIDEBAR ACTION BUTTONS
@@ -1045,7 +1108,7 @@ def main():
                     }
                     st.rerun()
                 else:
-                    success = run_recon_models(crossing_time)
+                    success, _, _ = run_recon_models(crossing_time)
                     if success:
                         st.success("Reconnection Models generated!")
             else:
@@ -1066,7 +1129,7 @@ def main():
                     st.rerun()
                 else:
                     s1, det = run_jet_check(crossing_time)
-                    s2 = run_recon_models(crossing_time, det=det)
+                    s2, _, _ = run_recon_models(crossing_time, det=det)
                     if s1 and s2:
                         st.success("All checks and models generated successfully!")
             else:
@@ -1089,6 +1152,7 @@ def main():
                     progress_bar = st.progress(0.0)
                     status_text = st.empty()
 
+                    file_times = []
                     if stop_condition == "End Time":
                         total_steps = (
                             int(
@@ -1097,6 +1161,34 @@ def main():
                             )
                             + 1
                         )
+                    elif stop_condition == "From File List":
+                        if stats_uploaded_file is not None:
+                            try:
+                                from dateutil import parser
+                                import pytz
+                                content = stats_uploaded_file.getvalue().decode("utf-8").splitlines()
+                                for line in content:
+                                    line = line.strip()
+                                    if not line or line.startswith(","):
+                                        continue
+                                    first_col = line.split(",")[0]
+                                    try:
+                                        t = parser.parse(first_col)
+                                        if t.tzinfo is None:
+                                            t = t.replace(tzinfo=pytz.utc)
+                                        file_times.append(t)
+                                    except Exception:
+                                        pass
+                                if not file_times:
+                                    st.error("No valid times found in the uploaded file.")
+                                    st.stop()
+                                total_steps = len(file_times)
+                            except Exception as e:
+                                st.error(f"Error parsing uploaded file: {e}")
+                                st.stop()
+                        else:
+                            st.error("Please upload a file list first.")
+                            st.stop()
                     else:
                         total_steps = target_jets
 
@@ -1104,9 +1196,13 @@ def main():
                     jets_found = 0
 
                     while True:
-                        if stop_condition == "End Time" and curr_t > stats_end_time:
+                        if stop_condition == "From File List":
+                            if step >= total_steps:
+                                break
+                            curr_t = file_times[step]
+                        elif stop_condition == "End Time" and curr_t > stats_end_time:
                             break
-                        if stop_condition == "Target Number of Jets" and jets_found >= target_jets:
+                        elif stop_condition == "Target Number of Jets" and jets_found >= target_jets:
                             break
 
                         # fail-safe for target jets to avoid infinite loop
@@ -1116,7 +1212,7 @@ def main():
                             )
                             break
 
-                        if stop_condition == "End Time":
+                        if stop_condition in ["End Time", "From File List"]:
                             status_text.text(
                                 f"Processing {curr_t.strftime('%Y-%m-%d %H:%M:%S')} (Step {step+1}/{total_steps})"
                             )
@@ -1143,7 +1239,7 @@ def main():
                                 with live_jet_plot_placeholder.container():
                                     st.plotly_chart(
                                         latest_jet_fig,
-                                        use_container_width=True,
+                                        width="stretch",
                                         key=f"live_jet_{step}",
                                     )
 
@@ -1154,15 +1250,16 @@ def main():
                             jets_found += 1
 
                         step += 1
-                        if stop_condition == "End Time":
+                        if stop_condition in ["End Time", "From File List"]:
                             progress_bar.progress(min(step / total_steps, 1.0))
                         else:
                             progress_bar.progress(min(jets_found / target_jets, 1.0))
 
-                        curr_t += t_delta_td
+                        if stop_condition != "From File List":
+                            curr_t += t_delta_td
 
                     status_text.text("Statistics Mode Completed!")
-                    if stop_condition == "End Time":
+                    if stop_condition in ["End Time", "From File List"]:
                         top_counter_placeholder.markdown(
                             f"<h1 style='text-align: center; color: #4CAF50;'>Statistics Mode Completed! Total Jets Found: {jets_found}</h1>",
                             unsafe_allow_html=True,
@@ -1359,22 +1456,104 @@ def main():
             # Build display DataFrame (Feature #7)
             display_data = []
             for i, entry in enumerate(master_jets):
+                # Parse date and times
+                j_time_str = entry.get("jet_time", "N/A")
+                c_time_str = entry.get("crossing_time", "N/A")
+                date_val = "N/A"
+                j_time_val = j_time_str
+                c_time_val = c_time_str
+                
+                try:
+                    if j_time_str != "N/A":
+                        dt_j = datetime.datetime.fromisoformat(j_time_str.replace(" ", "T"))
+                        date_val = dt_j.strftime("%Y-%m-%d")
+                        j_time_val = dt_j.strftime("%H:%M:%S")
+                    if c_time_str != "N/A":
+                        dt_c = datetime.datetime.fromisoformat(c_time_str.replace(" ", "T"))
+                        c_time_val = dt_c.strftime("%H:%M:%S")
+                except:
+                    pass
+
+                # Position
+                x = entry.get("data_x_gsm")
+                y = entry.get("data_y_gsm")
+                z = entry.get("data_z_gsm")
+                if x is not None and y is not None and z is not None:
+                    try:
+                        import math
+                        x, y, z = float(x), float(y), float(z)
+                        r = math.sqrt(x**2 + y**2 + z**2)
+                        pos_str = f"[{x:.2f}, {y:.2f}, {z:.2f}, {r:.2f}]"
+                    except:
+                        pos_str = "N/A"
+                else:
+                    pos_str = "N/A"
+
+                # Solar Wind B
+                bx = entry.get("data_sw_b_imf_gsm_x")
+                by = entry.get("data_sw_b_imf_gsm_y")
+                bz = entry.get("data_sw_b_imf_gsm_z")
+                if bx is not None and by is not None and bz is not None:
+                    try:
+                        bx, by, bz = float(bx), float(by), float(bz)
+                        b_mag = math.sqrt(bx**2 + by**2 + bz**2)
+                        b_str = f"[{bx:.1f}, {by:.1f}, {bz:.1f}, {b_mag:.1f}]"
+                    except:
+                        b_str = "N/A"
+                else:
+                    b_str = "N/A"
+                
+                # Solar Wind V
+                vx = entry.get("data_sw_v_imf_gse_x")
+                vy = entry.get("data_sw_v_imf_gse_y")
+                vz = entry.get("data_sw_v_imf_gse_z")
+                if vx is not None and vy is not None and vz is not None:
+                    try:
+                        vx, vy, vz = float(vx), float(vy), float(vz)
+                        v_mag = math.sqrt(vx**2 + vy**2 + vz**2)
+                        v_str = f"[{vx:.1f}, {vy:.1f}, {vz:.1f}, {v_mag:.1f}]"
+                    except:
+                        v_str = "N/A"
+                else:
+                    v_str = "N/A"
+                
+                # SW Np & Tp
+                np_val = entry.get("data_sw_np", "N/A")
+                if isinstance(np_val, (float, int)):
+                    np_val = f"{np_val:.2f}"
+                tp_val = entry.get("data_sw_tp", "N/A")
+                if isinstance(tp_val, (float, int)):
+                    tp_val = f"{tp_val:.1f}"
+                    
+                # Clock Angle & P_dyn
+                clock_angle = entry.get("data_sw_clock_angle", "N/A")
+                if isinstance(clock_angle, (float, int)):
+                    clock_angle = f"{clock_angle:.1f}"
+                p_dyn = entry.get("data_sw_p_dyn", "N/A")
+                if isinstance(p_dyn, (float, int)):
+                    p_dyn = f"{p_dyn:.2f}"
+
                 row = {
                     "Select": False,
                     "#": i + 1,
-                    "Jet Time": entry.get("jet_time", "N/A"),
-                    "Crossing Time": entry.get("crossing_time", "N/A"),
+                    "Date": date_val,
+                    "Jet Time": j_time_val,
+                    "Crossing Time": c_time_val,
+                    "MMS (X, Y, Z, R) [GSM]": pos_str,
+                    "B_IMF (Bx, By, Bz, |B|) [nT]": b_str,
+                    "Nₚ [cm⁻³]": np_val,
+                    "Tₚ [K]": tp_val,
+                    "V_IMF (Vx, Vy, Vz, |V|) [km/s]": v_str,
+                    "Clock Angle [°]": clock_angle,
+                    "P_dyn [nPa]": p_dyn,
                     "Probe": entry.get("mms_probe", entry.get("data_Probe", "N/A")),
-                    "X (GSM)": entry.get("data_x_gsm", "N/A"),
-                    "Y (GSM)": entry.get("data_y_gsm", "N/A"),
-                    "Z (GSM)": entry.get("data_z_gsm", "N/A"),
-                    "R (spc)": entry.get("data_r_spc", "N/A"),
                     "Shear Angle": entry.get("data_angle_b_lmn_vec_msp_msh_median", "N/A"),
                     "Data Rate": entry.get("data_rate", "N/A"),
                     "Level": entry.get("level", "N/A"),
                     "Beta MSH": entry.get("data_beta_msh_mean", "N/A"),
                     "Beta MSP": entry.get("data_beta_msp_mean", "N/A"),
                     "Added At": entry.get("added_at", "N/A"),
+                    "_original_index": i,
                 }
                 display_data.append(row)
 
@@ -1383,47 +1562,54 @@ def main():
             # Show total count
             st.metric("Total Jets in Master List", len(master_jets))
 
+            # --- Sorting Logic ---
+            sort_options = [c for c in display_df.columns if c not in ["Select", "#", "_original_index"]]
+            sort_by = st.selectbox("Sort Master List By:", options=["None"] + sort_options)
+            
+            if sort_by != "None":
+                # Convert "N/A" to real NaNs for proper sorting, then sort, then convert back
+                temp_df = display_df.replace("N/A", float("nan"))
+                temp_df = temp_df.sort_values(by=sort_by, ascending=True, na_position="last").reset_index(drop=True)
+                display_df = temp_df.replace(float("nan"), "N/A")
+                
+                # Highlight the sorted column by renaming it
+                highlight_name = f"⬇ **{sort_by}**"
+                display_df = display_df.rename(columns={sort_by: highlight_name})
+            else:
+                highlight_name = None
+
             # Feature #8: Editable dataframe with selection for pruning
+            # Build column config dynamically
+            col_config = {
+                "Select": st.column_config.CheckboxColumn("Select", help="Select rows to delete", default=False),
+                "_original_index": None, # Hide this column
+            }
+            # Make all other columns disabled
+            for col in display_df.columns:
+                if col not in ["Select", "_original_index"]:
+                    col_config[col] = st.column_config.TextColumn(col, disabled=True)
+                    
             edited_df = st.data_editor(
                 display_df,
                 hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "Select": st.column_config.CheckboxColumn(
-                        "Select",
-                        help="Select rows to delete",
-                        default=False,
-                    ),
-                    "#": st.column_config.NumberColumn("#", disabled=True),
-                    "Jet Time": st.column_config.TextColumn("Jet Time", disabled=True),
-                    "Crossing Time": st.column_config.TextColumn("Crossing Time", disabled=True),
-                    "Probe": st.column_config.TextColumn("Probe", disabled=True),
-                    "X (GSM)": st.column_config.TextColumn("X (GSM)", disabled=True),
-                    "Y (GSM)": st.column_config.TextColumn("Y (GSM)", disabled=True),
-                    "Z (GSM)": st.column_config.TextColumn("Z (GSM)", disabled=True),
-                    "R (spc)": st.column_config.TextColumn("R (spc)", disabled=True),
-                    "Shear Angle": st.column_config.TextColumn("Shear Angle", disabled=True),
-                    "Data Rate": st.column_config.TextColumn("Data Rate", disabled=True),
-                    "Level": st.column_config.TextColumn("Level", disabled=True),
-                    "Beta MSH": st.column_config.TextColumn("Beta MSH", disabled=True),
-                    "Beta MSP": st.column_config.TextColumn("Beta MSP", disabled=True),
-                    "Added At": st.column_config.TextColumn("Added At", disabled=True),
-                },
+                width="stretch",
+                column_config=col_config,
                 key="master_list_editor",
             )
 
             # --- Manual Pruning (Feature #8) ---
-            selected_indices = edited_df[edited_df["Select"]].index.tolist()
-            if selected_indices:
-                st.warning(f"{len(selected_indices)} jet(s) selected for deletion.")
+            selected_rows = edited_df[edited_df["Select"]]
+            if not selected_rows.empty:
+                selected_original_indices = selected_rows["_original_index"].tolist()
+                st.warning(f"{len(selected_original_indices)} jet(s) selected for deletion.")
                 if st.button(
-                    f"🗑️ Delete {len(selected_indices)} Selected Jet(s)",
+                    f"🗑️ Delete {len(selected_original_indices)} Selected Jet(s)",
                     type="primary",
                     key="delete_selected_jets",
                 ):
-                    mjl.delete_jets(st.session_state["master_jets"], selected_indices)
+                    mjl.delete_jets(st.session_state["master_jets"], selected_original_indices)
                     mjl.save_master_list(st.session_state["master_jets"])
-                    st.success(f"Deleted {len(selected_indices)} jet(s) from master list.")
+                    st.success(f"Deleted {len(selected_original_indices)} jet(s) from master list.")
                     st.rerun()
 
             # --- Export Options (Feature #9) ---
@@ -1437,7 +1623,7 @@ def main():
                 data=csv_bytes,
                 file_name=f"master_jets_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
 
             json_bytes = mjl.export_to_json(master_jets)
@@ -1446,7 +1632,7 @@ def main():
                 data=json_bytes,
                 file_name=f"master_jets_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                 mime="application/json",
-                use_container_width=True,
+                width="stretch",
             )
 
             pkl_bytes = mjl.export_to_pickle(master_jets)
@@ -1455,7 +1641,7 @@ def main():
                 data=pkl_bytes,
                 file_name=f"master_jets_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl",
                 mime="application/octet-stream",
-                use_container_width=True,
+                width="stretch",
             )
 
             # --- Quick Re-run (Feature #13) ---
@@ -1475,7 +1661,11 @@ def main():
                 key="quick_rerun_selector",
             )
 
-            if st.button("🔄 Load into Dashboard", key="load_jet_to_dashboard"):
+            col1, col2 = st.columns(2)
+            load_only = col1.button("🔄 Load into Dashboard", key="load_jet_to_dashboard", use_container_width=True)
+            load_and_run = col2.button("🚀 Load & Run Models", key="load_and_run_jet", use_container_width=True)
+
+            if load_only or load_and_run:
                 if selected_rerun and selected_rerun != "(none)":
                     rerun_idx = rerun_options.index(selected_rerun)
                     entry = master_jets[rerun_idx]
@@ -1515,11 +1705,29 @@ def main():
                             st.session_state[dst_key] = entry[src_key]
 
                     save_auto_session()
-                    st.success(
-                        f"Loaded parameters from jet at {entry.get('jet_time', 'N/A')}. "
-                        f"Switch to the Controls tab to run analyses."
-                    )
-                    st.rerun()
+                    
+                    if load_and_run:
+                        from dateutil import parser
+                        import pytz
+                        c_time = parser.parse(st.session_state["crossing_time_str"])
+                        if c_time.tzinfo is None:
+                            c_time = c_time.replace(tzinfo=pytz.utc)
+                            
+                        # Run checks with skip_master_add=True so it doesn't duplicate
+                        s1, det = run_jet_check(c_time, skip_master_add=True)
+                        s2, *_ = run_recon_models(c_time, det=det)
+                        
+                        if s1 and s2:
+                            st.success(f"Models successfully generated for jet at {entry.get('jet_time', 'N/A')}!")
+                        else:
+                            st.error(f"Failed to run models for jet at {entry.get('jet_time', 'N/A')}.")
+                        st.rerun()
+                    else:
+                        st.success(
+                            f"Loaded parameters from jet at {entry.get('jet_time', 'N/A')}. "
+                            f"Switch to the Controls tab to run analyses."
+                        )
+                        st.rerun()
 
             # --- Import Master List ---
             st.markdown("---")
@@ -1763,7 +1971,8 @@ def main():
                 st.success(f"Using statistics data from: {csv_path}")
 
                 # Plot selection
-                var_options = {
+                # Plot selection
+                base_var_options = {
                     "b_imf_z": r"IMF Bz",
                     "b_imf_x": r"IMF Bx",
                     "b_imf_y": r"IMF By",
@@ -1774,6 +1983,50 @@ def main():
                     "r_rc": "Reconnection Distance",
                     "delta_beta": "Delta Beta",
                 }
+
+                # Dynamically load from key_list.md
+                key_list_path = os.path.join(os.path.dirname(__file__), "key_list.md")
+                if os.path.exists(key_list_path):
+                    with open(key_list_path, "r") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line or ':' not in line:
+                                continue
+                            keys_part, labels_part = line.split(':', 1)
+                            keys = [k.strip() for k in keys_part.split(',')]
+                            labels = [l.strip() for l in labels_part.split(',')]
+                            
+                            full_keys = []
+                            base_key = ""
+                            for k in keys:
+                                if k.startswith('_'):
+                                    full_keys.append(base_key + k)
+                                else:
+                                    full_keys.append(k)
+                                    if k.endswith('_l'):
+                                        base_key = k[:-2]
+                                    else:
+                                        base_key = ""
+                            
+                            for k, l in zip(full_keys, labels):
+                                if k.startswith("data_"):
+                                    k = k[5:]
+                                base_var_options[k] = l
+
+                var_options = {}
+                import numpy as np
+                numeric_cols = stats_df.select_dtypes(include=[np.number]).columns
+                for col in numeric_cols:
+                    if col == "method_used" or col.startswith("Unnamed"):
+                        continue
+                    if stats_df[col].isna().all():
+                        continue
+                    var_options[col] = base_var_options.get(col, col.replace("_", " ").title())
+
+                available_vars = list(var_options.keys())
+                default_x = ["b_imf_z"] if "b_imf_z" in available_vars else ([available_vars[0]] if available_vars else [])
+                default_y = ["r_rc"] if "r_rc" in available_vars else ([available_vars[1]] if len(available_vars) > 1 else default_x)
+
                 plots_to_gen = st.multiselect(
                     "Select Figures to Generate",
                     [
@@ -1783,20 +2036,20 @@ def main():
                         "Scatter Plots",
                         "MMS Location Scatter Plot",
                     ],
-                    default=["Histograms", "KDE Plots", "2D Histograms", "Scatter Plots"],
+                    default=["Scatter Plots"],
                 )
 
                 x_vars = st.multiselect(
                     "X-Axis Variable(s)",
-                    list(var_options.keys()),
+                    available_vars,
                     format_func=lambda x: var_options[x],
-                    default=["b_imf_z"],
+                    default=default_x,
                 )
                 y_vars = st.multiselect(
                     "Y-Axis Variable(s)",
-                    list(var_options.keys()),
+                    available_vars,
                     format_func=lambda x: var_options[x],
-                    default=["r_rc"],
+                    default=default_y,
                 )
 
                 if st.button("Generate Selected Figures"):
@@ -1812,7 +2065,7 @@ def main():
                                 if len(x_vars) > 1:
                                     st.markdown(f"### {var_options[x_var]} vs {var_options[y_var]}")
 
-                                figures, err = generate_statistics_plots(
+                                figures, err = generate_interactive_plots(
                                     filtered_csv_path,
                                     dark_mode=is_dark_mode,
                                     selected_plots=plots_to_gen,
@@ -1829,7 +2082,10 @@ def main():
                                             st.write(f"**{title}**")
 
                                         if fig:
-                                            st.pyplot(fig)
+                                            st.plotly_chart(
+                                                fig,
+                                                width="stretch",
+                                            )
                                         else:
                                             st.warning(f"Could not generate {title}")
 

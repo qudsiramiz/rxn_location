@@ -140,3 +140,7 @@ dmypy.json
 *.hdf
 *.h5
 pyrightconfig.json
+
+# Figures folder
+src/rxn_location/figures/*
+src/rxn_location/instructions.md

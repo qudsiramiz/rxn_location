@@ -70,11 +70,19 @@ poetry shell
 
 The easiest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize 3D reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
 
+**Recent GUI Features include:**
+- **Master Jet List**: Persistent JSON storage of detected jets with automatic 2-minute deduplication across sessions.
+- **Interactive Data Table**: View, sort, manually prune, and export (CSV/JSON/Pickle) your master jet list.
+- **Duplicate Jet Dialog**: Safety checks when generating models to prevent processing the same jet multiple times.
+- **Parameter Presets**: Save and load your favorite sidebar configurations.
+- **Data Cache Dashboard**: Monitor and clean up the local PySPEDAS data cache directly from the sidebar.
+- **Dynamic Plot Filtering**: Filter statistics by IMF Bz, dynamic pressure, and shear angle before plotting.
+- **Quick Re-run**: Instantly load parameters from a previously saved jet into the dashboard.
+
 To launch the GUI, run the following command from the root directory:
 ```bash
 streamlit run src/rxn_location/app.py
 ```
-For detailed instructions, refer to the [GUI Usage Guide](docs/gui_usage.md) or your MkDocs documentation site.
 
 ### Command Line Scripts
 

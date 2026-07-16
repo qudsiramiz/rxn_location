@@ -148,38 +148,22 @@ def plot_hist(
     df_va_cs = df[df.method_used == "va_cs"].copy()
     df_bisec = df[df.method_used == "bisection"].copy()
 
-    cone_angle_shear = (
-        np.arccos(
-            df_shear.b_imf_x
-            / np.sqrt(df_shear.b_imf_x**2 + df_shear.b_imf_y**2 + df_shear.b_imf_z**2)
-        )
-        * 180
-        / np.pi
-    )
-    cone_angle_rx_en = (
-        np.arccos(
-            df_rx_en.b_imf_x
-            / np.sqrt(df_rx_en.b_imf_x**2 + df_rx_en.b_imf_y**2 + df_rx_en.b_imf_z**2)
-        )
-        * 180
-        / np.pi
-    )
-    cone_angle_va_cs = (
-        np.arccos(
-            df_va_cs.b_imf_x
-            / np.sqrt(df_va_cs.b_imf_x**2 + df_va_cs.b_imf_y**2 + df_va_cs.b_imf_z**2)
-        )
-        * 180
-        / np.pi
-    )
-    cone_angle_bisec = (
-        np.arccos(
-            df_bisec.b_imf_x
-            / np.sqrt(df_bisec.b_imf_x**2 + df_bisec.b_imf_y**2 + df_bisec.b_imf_z**2)
-        )
-        * 180
-        / np.pi
-    )
+    def safe_cone_angle(df_n):
+        if all(c in df_n.columns for c in ["b_imf_x", "b_imf_y", "b_imf_z"]) and len(df_n) > 0:
+            return (
+                np.arccos(
+                    df_n.b_imf_x
+                    / np.sqrt(df_n.b_imf_x**2 + df_n.b_imf_y**2 + df_n.b_imf_z**2)
+                )
+                * 180
+                / np.pi
+            )
+        return pd.Series(dtype=float)
+
+    cone_angle_shear = safe_cone_angle(df_shear)
+    cone_angle_rx_en = safe_cone_angle(df_rx_en)
+    cone_angle_va_cs = safe_cone_angle(df_va_cs)
+    cone_angle_bisec = safe_cone_angle(df_bisec)
 
     df_shear["cone_angle"] = cone_angle_shear
     df_rx_en["cone_angle"] = cone_angle_rx_en

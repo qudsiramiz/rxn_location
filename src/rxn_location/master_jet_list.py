@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytz
+import numpy as np
 
 DEFAULT_MASTER_LIST_PATH = Path(os.path.expanduser("~")) / ".rxn_location_master_jets.json"
 
@@ -463,4 +464,35 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
         return None
 
     df = pd.DataFrame(filtered)
-    return df
+
+    # Rename columns to remove 'data_' prefix for compatibility with stats plots
+    rename_map = {c: c[5:] for c in df.columns if c.startswith("data_")}
+    df.rename(columns=rename_map, inplace=True)
+    
+    # Duplicate the dataframe 4 times to populate the standard 2x2 plot grid
+    models = ["shear", "rx_en", "va_cs", "bisection"]
+    
+    # We map the standard model names to the exact keys output by the ridge finder.
+    # We stripped "data_" earlier, so the column will be "r_rc_Shear", "r_rc_Reconnection Energy", etc.
+    model_mapping = {
+        "shear": "r_rc_Shear",
+        "bisection": "r_rc_Bisection Field",
+        "rx_en": "r_rc_Reconnection Energy",
+        "va_cs": "r_rc_Exhaust Velocity",
+    }
+    
+    df_list = []
+    for model in models:
+        df_copy = df.copy()
+        df_copy["method_used"] = model
+        
+        # Check if the theoretical R_rc was computed and saved for this model
+        target_col = model_mapping[model]
+        if target_col in df.columns:
+            df_copy["r_rc"] = df[target_col]
+        else:
+            df_copy["r_rc"] = np.nan
+            
+        df_list.append(df_copy)
+        
+    return pd.concat(df_list, ignore_index=True)

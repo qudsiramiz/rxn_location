@@ -2213,4 +2213,11 @@ def ridge_finder_multiple_interactive(
         except Exception as e:
             print(e)
 
-    return fig
+    # Build dictionary of R_rc values to return
+    dist_rc_dict = {}
+    for i, dist_rc in enumerate(dist_rc_list):
+        method_used = c_label[i] if c_label[i] else f"model_{i}"
+        key_name = f"data_r_rc_{method_used}"
+        dist_rc_dict[key_name] = np.round(dist_rc, 3) if not np.isnan(dist_rc) else np.nan
+
+    return fig, dist_rc_dict

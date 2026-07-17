@@ -209,6 +209,8 @@ def add_jet(entries, data_dict, crossing_time, params, window_minutes=2):
         "level",
         "coord_type",
         "time_clip",
+        "t_delta",
+        "max_attempts",
         "tsy_model",
         "recon_models",
         "omni_level",

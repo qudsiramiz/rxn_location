@@ -19,11 +19,9 @@ def set_verbosity(level):
         logging.getLogger("pyspedas").setLevel(logging.ERROR)
         logging.getLogger("pytplot").setLevel(logging.ERROR)
         logging.getLogger("urllib3").setLevel(logging.ERROR)
-        logging.getLogger().setLevel(logging.ERROR)
     else:
         logging.getLogger("pyspedas").setLevel(logging.INFO)
         logging.getLogger("pytplot").setLevel(logging.INFO)
-        logging.getLogger().setLevel(logging.INFO)
 
 
 def vprint(level, message, color=None):

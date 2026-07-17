@@ -252,12 +252,10 @@ def plot_hist(
     rx_en_r_rc_mean = df_rx_en[df_rx_en.r_rc < r_lim_val]["r_rc"].mean()
     va_cs_r_rc_mean = df_va_cs[df_va_cs.r_rc < r_lim_val]["r_rc"].mean()
     bisec_r_rc_mean = df_bisec[df_bisec.r_rc < r_lim_val]["r_rc"].mean()
-    if density == True:
-        y_label = "Frequency"
-    else:
-        y_label = "Counts"
-    fig = plt.figure(num=None, figsize=fig_size, dpi=200, facecolor="k", edgecolor="w")
-    fig.subplots_adjust(
+    y_label = "Density" if density else "Counts"
+    facecolor = "k" if dark_mode else "w"
+    edgecolor = "w" if dark_mode else "k"
+    fig = plt.figure(num=None, figsize=fig_size, dpi=200, facecolor=facecolor, edgecolor=edgecolor)
         left=0.01, right=0.99, top=0.99, bottom=0.01, wspace=0.0, hspace=0.0
     )
     gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1])

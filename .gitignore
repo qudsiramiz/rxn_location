@@ -145,3 +145,6 @@ pyrightconfig.json
 src/rxn_location/figures/*
 src/rxn_location/instructions.md
 /figures/*
+examples/figures/*
+*.pkl
+

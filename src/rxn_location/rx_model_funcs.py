@@ -1,3 +1,4 @@
+from rxn_location.logger import vprint
 import datetime
 import multiprocessing as mp
 import os
@@ -429,6 +430,7 @@ def ridge_finder_multiple(
     y_vals = []
     x_intr_vals_list = []
     y_intr_vals_list = []
+    dist_rc_list = []
     for i in range(len(image)):
         image_rotated = np.transpose(image[i])
 
@@ -572,6 +574,7 @@ def ridge_finder_multiple(
 
         if dist_rc > xrange[1]:
             dist_rc = np.nan
+        dist_rc_list.append(dist_rc)
 
         if i == 0:
             method_used = "shear"
@@ -627,7 +630,7 @@ def ridge_finder_multiple(
                 with open(rc_folder + rc_file_name, "w") as f:
                     f.write(var_list + "\n")
                     f.close()
-                    print(f"Created {rc_folder + rc_file_name} to store data")
+                    vprint(2, f"Created {rc_folder + rc_file_name} to store data")
             # Open file and append the relevant data
             with open(rc_folder + rc_file_name, "a") as f:
                 for key in data_dict.keys():
@@ -637,7 +640,7 @@ def ridge_finder_multiple(
                         f.write(f"{data_dict[key]},")
                 f.write("\n")
                 f.close()
-                print(f"Saved data to {rc_folder + rc_file_name}")
+                vprint(2, f"Saved data to {rc_folder + rc_file_name}")
 
         # plot an arrow along the magnetosheath magnetic field direction
         axs1.arrow(
@@ -915,22 +918,31 @@ def ridge_finder_multiple(
 
             if not fig_folder.exists():
                 fig_folder.mkdir(parents=True, exist_ok=True)
-                print("created folder : ", fig_folder)
+                vprint(2, "created folder : ", fig_folder)
             else:
-                print(f"folder already exists: {fig_folder}\n")
+                vprint(2, f"folder already exists: {fig_folder}\n")
 
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.{fig_format}"
             plt.savefig(fig_name, bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200)
-            print(f"Figure saved as {fig_name}")
+            abs_fig_name = os.path.abspath(fig_name)
+            vprint(2, f"Figure saved as {abs_fig_name}")
         except Exception as e:
-            print(e)
-            print("Figure not saved, folder does not exist. Create folder figures")
-            print("try again")
+            vprint(1, e, color="red")
+            vprint(2, "Figure not saved, folder does not exist. Create folder figures")
+            vprint(2, "try again")
             # pass
         # plt.close()
     plt.close()
-    return y_vals, x_intr_vals_list, y_intr_vals_list
+    
+    # Build dictionary of R_rc values to return
+    dist_rc_dict = {}
+    for i, dist_rc in enumerate(dist_rc_list):
+        method_used = c_label[i] if c_label[i] else f"model_{i}"
+        key_name = f"r_rc_{method_used}"
+        dist_rc_dict[key_name] = np.round(dist_rc, 3) if not np.isnan(dist_rc) else np.nan
+        
+    return y_vals, x_intr_vals_list, y_intr_vals_list, dist_rc_dict
 
 
 def model_run(*args):
@@ -1038,12 +1050,12 @@ def model_run(*args):
                         sw_params["param"], sw_params["ps"], x_shu, y_shu, z_shu
                     )
             except Exception:
-                print(f"Skipped for {x_shu, y_shu, z_shu}")
+                vprint(2, f"Skipped for {x_shu, y_shu, z_shu}")
                 pass
 
             bx_igrf, by_igrf, bz_igrf = gp.igrf_gsm(x_shu, y_shu, z_shu)
 
-            # print(j, k, bx_ext, bx_igrf)
+            # vprint(2, j, k, bx_ext, bx_igrf)
             bx = bx_ext + bx_igrf
             by = by_ext + by_igrf
             bz = bz_ext + bz_igrf
@@ -1134,7 +1146,7 @@ def get_sw_params(
     )
 
     omni_time = spd.get_data(omni_vars[0])[0]
-    # print(f"omni_time: {omni_time}")
+    # vprint(2, f"omni_time: {omni_time}")
     omni_bx_gse = spd.get_data(omni_vars[0])[1]
     omni_by_gsm = spd.get_data(omni_vars[1])[1]
     omni_bz_gsm = spd.get_data(omni_vars[2])[1]
@@ -1247,7 +1259,7 @@ def get_sw_params(
                 0
             ]
             if verbose:
-                print(
+                vprint(2, 
                     f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
                 )
         except:
@@ -1277,7 +1289,7 @@ def get_sw_params(
                 0
             ]
             if verbose:
-                print(
+                vprint(2, 
                     f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
                 )
     else:
@@ -1348,9 +1360,9 @@ def get_sw_params(
     else:
         mean_mms_sc_pos = None
 
-    print("IMF parameters found:")
+    vprint(1, "IMF parameters found:", color="green")
     if verbose:
-        print(
+        vprint(2, 
             tabulate(
                 [
                     ["Time of observation (UTC)", f"{time_imf_hrf}"],
@@ -1618,9 +1630,9 @@ def rx_model(
         for k in range(len_z)
     )
 
-    print("Running the model \n")
+    vprint(2, "Running the model \n")
     res = p.map(model_run, input)
-    print("Model run complete \n")
+    vprint(2, "Model run complete \n")
 
     p.close()
     p.join()
@@ -1671,10 +1683,10 @@ def rx_model(
             data_file.create_dataset("z_shu", data=z_shu)
 
             data_file.close()
-            print(f"Date saved to file {fn} \n")
+            vprint(2, f"Date saved to file {fn} \n")
         except Exception as e:
-            print(e)
-            print(
+            vprint(1, e, color="red")
+            vprint(2, 
                 f"Data not saved to file {fn}. Please make sure that file name is correctly"
                 + " assigned and that the directory exists and you have write permissions"
             )
@@ -2153,7 +2165,7 @@ def ridge_finder_multiple_interactive(
         f"Model: {tsy_model.upper()}<br>"
         f"B_imf: [{b_imf[0]:.2f}, {b_imf[1]:.2f}, {b_imf[2]:.2f}] nT<br>"
         f"MMS Pos: [{mms_sc_pos[0]:.2f}, {mms_sc_pos[1]:.2f}, {mms_sc_pos[2]:.2f}] R_E<br>"
-        f"Dipole Tilt: {dipole_tilt_angle:.2f}°<br>"
+        f"Dipole Tilt: {dipole_tilt_angle * 180 / np.pi:.2f}°<br>"
         f"Clock Angle: {imf_clock_angle:.2f}°"
     )
 
@@ -2212,9 +2224,10 @@ def ridge_finder_multiple_interactive(
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.html"
             fig.write_html(str(fig_name), default_width="100%", default_height="100%")
-            print(f"Interactive figure saved as {fig_name}")
+            abs_fig_name = os.path.abspath(fig_name)
+            vprint(2, f"Interactive figure saved as {abs_fig_name}")
         except Exception as e:
-            print(e)
+            vprint(1, e, color="red")
 
     # Build dictionary of R_rc values to return
     dist_rc_dict = {}

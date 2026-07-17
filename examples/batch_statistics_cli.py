@@ -19,6 +19,7 @@ from rxn_location.rx_model_funcs import (
 )
 import numpy as np
 import rxn_location.master_jet_list as mjl
+from rxn_location.logger import set_verbosity, vprint
 
 def parse_args():
     class CommentedArgumentParser(argparse.ArgumentParser):
@@ -69,8 +70,8 @@ def parse_args():
         "--limits", type=int, default=20, help="X, Y, Z boundaries for 3D grid (Re). Default: 20"
     )
     parser.add_argument(
-        "--log-level", type=str, default="WARNING", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the logging output level. Default: WARNING"
+        "--verbosity", type=int, default=2, choices=[0, 1, 2, 3],
+        help="Verbosity level (0-3). 0: silent, 1: important only, 2: standard (no PySPEDAS), 3: all. Default: 2"
     )
     parser.add_argument(
         "--t_delta", type=int, default=2,
@@ -84,6 +85,10 @@ def parse_args():
         "--plot-seaborn",
         action="store_true",
         help="Generate final statistical Seaborn joint-plots from the Master List.",
+    )
+    parser.add_argument(
+        "--plot_engine", type=str, default="plotly", choices=["plotly", "matplotlib"],
+        help="Engine used to plot the jet reversal check (plotly or matplotlib). Default: plotly"
     )
     return parser.parse_args()
 
@@ -104,27 +109,21 @@ def main():
         ["MP Standoff (m_p)", args.m_p],
         ["Grid Resolution (dr)", args.dr],
         ["Grid Limits", args.limits],
-        ["Log Level", args.log_level],
+        ["Verbosity", args.verbosity],
         ["Retry Δt (min)", args.t_delta],
         ["Max Retries", args.max_retries],
     ]
-    print("\n" + "="*60)
-    print("RXN Location: Batch Statistics Processing")
-    print("="*60)
-    print(tabulate(param_table, headers=["Parameter", "Value"], tablefmt="fancy_grid"))
-    print("="*60 + "\n")
+    vprint(1, "\n" + "="*60, color="cyan")
+    vprint(1, "RXN Location: Batch Statistics Processing", color="bold")
+    vprint(1, "="*60, color="cyan")
+    vprint(1, tabulate(param_table, headers=["Parameter", "Value"], tablefmt="fancy_grid"), color="cyan")
+    vprint(1, "="*60 + "\n", color="cyan")
     
-    # Configure root logging
-    log_level = getattr(logging, args.log_level)
-    logging.getLogger().setLevel(log_level)
-    
-    # Suppress verbose pyspedas/pytplot logs unless DEBUG is requested
-    if args.log_level != "DEBUG":
-        logging.getLogger("pyspedas").setLevel(logging.WARNING)
-        logging.getLogger("pytplot").setLevel(logging.WARNING)
+    # Configure global verbosity
+    set_verbosity(args.verbosity)
     
     if not os.path.exists(args.input):
-        print(f"Error: Input file '{args.input}' not found.")
+        vprint(1, f"Error: Input file '{args.input}' not found.", color="red")
         sys.exit(1)
         
     os.makedirs(args.outdir, exist_ok=True)
@@ -146,19 +145,41 @@ def main():
                 pass
                 
     if not file_times:
-        print("Error: No valid timestamps found in the input file.")
+        vprint(1, "Error: No valid timestamps found in the input file.", color="red")
         sys.exit(1)
         
-    print(f"Found {len(file_times)} valid timestamps to process.\n")
+    vprint(1, f"Found {len(file_times)} valid timestamps to process.\n", color="green")
     
     master_jets = mjl.load_master_list()
     
     # Define models to run
-    models_to_run = ["shear", "bisection", "reconnection energy", "exhaust velocity"]
+    models_to_run = ["shear", "reconnection energy", "exhaust velocity", "bisection"]
     
     for idx, c_time_original in enumerate(file_times):
         time_str = c_time_original.strftime('%Y-%m-%d %H:%M:%S')
-        print(f"[{idx+1}/{len(file_times)}] Processing: {time_str}")
+        vprint(1, f"[{idx+1}/{len(file_times)}] Processing: {time_str}", color="blue")
+        
+        # Check if time is already in master list
+        already_processed = False
+        for entry in master_jets:
+            try:
+                ct = entry.get("crossing_time")
+                if ct:
+                    ct_dt = mjl._parse_time(ct)
+                    if abs(ct_dt - c_time_original) <= datetime.timedelta(seconds=2):
+                        already_processed = True
+                        break
+            except Exception:
+                pass
+                
+        if not already_processed:
+            existing = mjl.find_nearby_jet(master_jets, c_time_original, window_minutes=2)
+            if existing is not None:
+                already_processed = True
+
+        if already_processed:
+            vprint(1, f"  -> Skipping: Time {time_str} is already present in the Master List.", color="yellow")
+            continue
         
         # 1. Jet Reversal Check (with retry logic)
         # Try the original time first, then shift by ±t_delta minutes
@@ -172,50 +193,66 @@ def main():
             times_to_try.append(c_time_original - datetime.timedelta(minutes=i * args.t_delta))
         
         for attempt_idx, attempt_time in enumerate(times_to_try):
+            time_str_safe = attempt_time.strftime("%Y-%m-%d_%H%M%S")
+            jet_plot_filename = os.path.join(args.outdir, f"jet_plot_{time_str_safe}.{args.format}")
+            
             try:
-                fig_try, s1_try, det_try = jet_reversal_check(
+                res = jet_reversal_check(
                     attempt_time,
                     probe=args.probe,
                     data_rate=args.data_rate,
                     dt=args.dt,
                     jet_len=args.jet_len,
+                    return_plotly_fig=(args.plot_engine == "plotly"),
+                    figname=jet_plot_filename if args.plot_engine == "matplotlib" else None,
                 )
             except Exception as e:
                 if attempt_idx == 0:
-                    print(f"  -> Error running Jet Check: {e}")
+                    vprint(1, f"  -> Error running Jet Check: {e}", color="red")
                 continue
+            
+            if res is None:
+                continue
+                
+            fig_try, s1_try, det_try = res
             
             if s1_try and det_try is not None:
                 fig, s1, det = fig_try, s1_try, det_try
                 c_time = attempt_time
                 if attempt_idx > 0:
-                    print(f"  -> Jet found at shifted time {attempt_time.strftime('%Y-%m-%d %H:%M:%S')} "
-                          f"(attempt {attempt_idx + 1}/{len(times_to_try)})")
+                    vprint(1, f"  -> Jet found at shifted time {attempt_time.strftime('%Y-%m-%d %H:%M:%S')} "
+                              f"(attempt {attempt_idx + 1}/{len(times_to_try)})", color="yellow")
                 break
             elif attempt_idx == 0:
-                print(f"  -> No jet at original time, searching nearby times (±{args.t_delta}min steps)...")
+                vprint(2, f"  -> No jet at original time, searching nearby times (±{args.t_delta}min steps)...", color="magenta")
         
         if not s1 or det is None:
-            print(f"  -> No jet found at {time_str} or within ±{args.max_retries * args.t_delta}min window.")
+            vprint(1, f"  -> No jet found at {time_str} or within ±{args.max_retries * args.t_delta}min window.", color="red")
             continue
             
-        print(f"  -> Jet detected!")
+        vprint(1, f"  -> Jet detected!", color="green")
         
         # Save the jet plot
-        if fig is not None:
-            time_str_safe = time_str.replace(" ", "_").replace(":", "")
-            jet_plot_filename = os.path.join(args.outdir, f"jet_plot_{time_str_safe}.{args.format}")
+        if args.plot_engine == "plotly" and fig is not None:
             try:
                 if args.format == "html":
                     fig.write_html(jet_plot_filename)
                 else:
                     fig.write_image(jet_plot_filename)
-                print(f"  -> Saved Jet Plot to {jet_plot_filename}")
+                
+                abs_jet_plot_filename = os.path.abspath(jet_plot_filename)
+                vprint(2, f"  -> Saved Jet Plot to {abs_jet_plot_filename}", color="magenta")
             except Exception as e:
-                print(f"  -> Failed to save Jet Plot: {e}")
+                vprint(1, f"  -> Failed to save Jet Plot: {e}", color="red")
+        elif args.plot_engine == "matplotlib":
+            abs_jet_plot_filename = os.path.abspath(jet_plot_filename)
+            vprint(2, f"  -> Saved Jet Plot to {abs_jet_plot_filename}", color="magenta")
         
-        # 2. Reconnection Models (use actual jet time, which may differ from original)
-        jet_time_str = c_time.strftime('%Y-%m-%d %H:%M:%S')
+        # 2. Reconnection Models (use exact jet time from detection)
+        exact_jet_time = det.get("jet_time")
+        if exact_jet_time is None:
+            exact_jet_time = c_time
+        jet_time_str = exact_jet_time.strftime('%Y-%m-%d %H:%M:%S')
         try:
             model_inputs = {
                 "trange": [jet_time_str],
@@ -230,7 +267,7 @@ def main():
             
             res = rx_model(**model_inputs)
             if not res:
-                print(f"  -> Model generation failed for {time_str}")
+                vprint(1, f"  -> Model generation failed for {time_str}", color="red")
                 continue
                 
             sw_params = res[8]
@@ -279,8 +316,8 @@ def main():
                 "fig_name": f"recon_models_{time_str.replace(' ', '_').replace(':', '')}",
                 "fig_format": args.format,
                 "c_label": c_labels,
-                "wspace": 0.15,
-                "hspace": 0.17,
+                "wspace": 0.0,
+                "hspace": 0.20,
                 "fig_size": (8.775, 10) if args.format == "html" else (10, 8),
                 "box_style": dict(boxstyle="round", color="k", alpha=0.8),
                 "title_y_pos": 1.09,
@@ -293,16 +330,19 @@ def main():
                 "df_jet_reversal": det,
             }
             
-            print("  -> Generating Reconnection Models...")
+            vprint(2, "  -> Generating Reconnection Models...", color="magenta")
             if args.format == "html":
-                _ = ridge_finder_multiple_interactive(**figure_inputs)
+                _, dist_rc_dict = ridge_finder_multiple_interactive(**figure_inputs)
             else:
-                _ = ridge_finder_multiple(**figure_inputs)
+                _, _, _, dist_rc_dict = ridge_finder_multiple(**figure_inputs)
                 
-            print("  -> Models generated and saved!")
+            if dist_rc_dict:
+                det.update(dist_rc_dict)
+                
+            vprint(2, "  -> Models generated and saved!", color="magenta")
             
         except Exception as e:
-            print(f"  -> Error running Models: {e}")
+            vprint(1, f"  -> Error running Models: {e}", color="red")
             continue
 
         # 3. Save to Master List
@@ -326,8 +366,13 @@ def main():
         
         # Pull latest OMNI SW params for contextual Master List logging
         try:
+            trange_date_min = exact_jet_time - datetime.timedelta(minutes=30)
+            trange_date_max = exact_jet_time + datetime.timedelta(minutes=30)
+            trange_min_str = trange_date_min.strftime("%Y-%m-%d %H:%M:%S") + "Z"
+            trange_max_str = trange_date_max.strftime("%Y-%m-%d %H:%M:%S") + "Z"
+            
             sw_params = get_sw_params(
-                trange=[jet_time_str], omni_level="hro", mms_probe_num=args.probe
+                trange=[trange_min_str, trange_max_str], omni_level="hro", mms_probe_num=str(args.probe)
             )
             if sw_params is not None:
                 det["sw_b_imf_gsm_x"] = sw_params["b_imf"][0]
@@ -361,33 +406,26 @@ def main():
         
         if was_added:
             mjl.save_master_list(master_jets)
-            print("  -> Logged to Master Jet List.")
+            vprint(1, "  -> Logged to Master Jet List.", color="green")
         else:
-            print(f"  -> Jet already exists in Master List (near {existing.get('jet_time')}).")
+            vprint(2, f"  -> Jet already exists in Master List (near {existing.get('jet_time')}).", color="yellow")
 
     if args.plot_seaborn:
-        print("\nGenerating Statistical Seaborn Plots...")
+        vprint(1, "\n" + "="*60, color="cyan")
+        vprint(1, "Generating Seaborn joint-plots for master list parameters...", color="bold")
+        vprint(1, "="*60, color="cyan")
         df_stats = mjl.master_list_to_stats_csv(master_jets)
         if df_stats is not None and not df_stats.empty:
             from rxn_location.app_seaborn_plots import generate_seaborn_jointplots
             try:
-                fig = generate_seaborn_jointplots(
-                    df_stats, 
-                    x_key="b_imf_z", 
-                    y_key="b_imf_y", 
-                    x_label=r"IMF $B_{\rm z}$ [nT]", 
-                    y_label=r"IMF $B_{\rm y}$ [nT]", 
-                    marker_size_var="r_rc"
-                )
-                fig_path = os.path.join(args.outdir, "seaborn_stats_By_vs_Bz.png")
-                fig.savefig(fig_path, dpi=300, bbox_inches="tight")
-                print(f"  -> Saved Seaborn plot to {fig_path}")
+                _ = generate_seaborn_jointplots(df_full=master_jets, dark_mode=False)
+                vprint(1, "  -> Done generating Seaborn plots.", color="green")
             except Exception as e:
-                print(f"  -> Error generating Seaborn plot: {e}")
+                vprint(1, f"  -> Error generating Seaborn plot: {e}", color="red")
         else:
-            print("  -> Not enough data to generate Seaborn plots.")
+            vprint(1, "  -> Not enough data to generate Seaborn plots.", color="yellow")
 
-    print(f"\nBatch processing complete! Output saved to {args.outdir}/")
+    vprint(1, f"\nBatch processing complete! Output saved to {args.outdir}/", color="green")
 
 if __name__ == "__main__":
     main()

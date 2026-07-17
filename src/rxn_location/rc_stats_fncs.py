@@ -1,4 +1,3 @@
-import importlib
 import os
 
 import pandas as pd
@@ -8,8 +7,6 @@ import numpy as np
 
 from matplotlib.pyplot import MaxNLocator
 from . import rx_model_funcs as rmf
-
-importlib.reload(rmf)
 
 # Set the font size for the axes
 label_size = 20  # fontsize for x and y labels

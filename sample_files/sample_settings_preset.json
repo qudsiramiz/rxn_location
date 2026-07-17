@@ -1,0 +1,25 @@
+{
+  "Default Settings": {
+    "crossing_time_str": "2015-09-02 16:45:00",
+    "mms_probe": 3,
+    "dt": 300,
+    "jet_len": 3,
+    "data_rate": "brst",
+    "level": "l2",
+    "coord_type": "lmn",
+    "time_clip": true,
+    "t_delta": 10,
+    "max_attempts": 5,
+    "tsy_model": "t96",
+    "recon_models": [
+      "shear",
+      "bisection",
+      "reconnection energy",
+      "exhaust velocity"
+    ],
+    "omni_level": "hro",
+    "m_p": 0.5,
+    "dr": 0.25,
+    "limits": 20.0
+  }
+}

@@ -8,6 +8,19 @@ import re
 
 
 def format_latex(text):
+    """
+    Formats text strings into LaTeX math strings for Plotly annotations.
+    
+    Parameters
+    ----------
+    text : str
+        The raw text string, which may contain underscores or greek letter names.
+    
+    Returns
+    -------
+    str
+        The formatted LaTeX string wrapped in $$ for Plotly rendering.
+    """
     if not text:
         return text
     text = str(text)
@@ -45,7 +58,9 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
     Converts a list of tplot variables into a Plotly Figure.
     """
     num_plots = len(keys_to_plot)
-    fig = make_subplots(rows=num_plots, cols=1, shared_xaxes=True, vertical_spacing=0.02)
+    fig = make_subplots(
+        rows=num_plots, cols=1, shared_xaxes=True, vertical_spacing=0.02
+    )
 
     layout_updates = {}
 
@@ -80,12 +95,17 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
             if data is None:
                 continue
 
-            times = [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in data.times]
+            times = [
+                datetime.datetime.fromtimestamp(t, datetime.timezone.utc)
+                for t in data.times
+            ]
 
             # Check if it's a spectrogram (2D data with v)
             if hasattr(data, "v") or hasattr(data, "v1") or hasattr(data, "v2"):
                 v_data = (
-                    data.v if hasattr(data, "v") else (data.v1 if hasattr(data, "v1") else data.v2)
+                    data.v
+                    if hasattr(data, "v")
+                    else (data.v1 if hasattr(data, "v1") else data.v2)
                 )
                 y_data = data.y
 
@@ -100,7 +120,11 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
                         colorscale="Viridis",
                         showscale=True,
                         colorbar=dict(
-                            title=z_title, len=1.0 / num_plots, y=y_center, yanchor="middle", x=1.02
+                            title=z_title,
+                            len=1.0 / num_plots,
+                            y=y_center,
+                            yanchor="middle",
+                            x=1.02,
                         ),
                     ),
                     row=i + 1,
@@ -114,16 +138,24 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
                 # Configure a separate legend for this subplot
                 legend_id = f"legend{i+1}" if i > 0 else "legend"
                 layout_updates[legend_id] = dict(
-                    y=y_center, yanchor="middle", x=1.02, xanchor="left", tracegroupgap=0
+                    y=y_center,
+                    yanchor="middle",
+                    x=1.02,
+                    xanchor="left",
+                    tracegroupgap=0,
                 )
 
                 if y_data.ndim == 1:
                     name = format_latex(
-                        legend_names[legend_idx] if legend_idx < len(legend_names) else var_name
+                        legend_names[legend_idx]
+                        if legend_idx < len(legend_names)
+                        else var_name
                     )
                     legend_idx += 1
                     fig.add_trace(
-                        go.Scatter(x=times, y=y_data, mode="lines", name=name, legend=legend_id),
+                        go.Scatter(
+                            x=times, y=y_data, mode="lines", name=name, legend=legend_id
+                        ),
                         row=i + 1,
                         col=1,
                     )
@@ -137,22 +169,32 @@ def convert_tplot_to_plotly(keys_to_plot, dark_mode=False):
                         legend_idx += 1
                         fig.add_trace(
                             go.Scatter(
-                                x=times, y=y_data[:, col], mode="lines", name=name, legend=legend_id
+                                x=times,
+                                y=y_data[:, col],
+                                mode="lines",
+                                name=name,
+                                legend=legend_id,
                             ),
                             row=i + 1,
-                            
                             col=1,
                         )
 
         if y_type == "log":
             fig.update_yaxes(
-                type=y_type, title_text=y_title, exponentformat="power", dtick=1, row=i + 1, col=1
+                type=y_type,
+                title_text=y_title,
+                exponentformat="power",
+                dtick=1,
+                row=i + 1,
+                col=1,
             )
         else:
             fig.update_yaxes(type=y_type, title_text=y_title, row=i + 1, col=1)
 
     template = "plotly_dark" if dark_mode else "plotly_white"
-    layout_updates.update(dict(height=250 * num_plots, template=template, showlegend=True))
+    layout_updates.update(
+        dict(height=250 * num_plots, template=template, showlegend=True)
+    )
     fig.update_layout(**layout_updates)
 
     return fig

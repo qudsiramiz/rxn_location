@@ -82,18 +82,10 @@ The easiest way to use `rxn_location` is via the interactive Streamlit graphical
 
 To launch the GUI, run the following command from the root directory:
 ```bash
-streamlit run src/rxn_location/app.py
+rxn-location-gui
 ```
 
-### Command Line Scripts
-
-In order to check for jet location in MMS data via command line, use the following command:
-```
-python -m jet_reversal_check.py
-```
-
-#### Batch Processing via Command Line
-If you prefer not to use the GUI, you can completely automate the entire pipeline (Jet Reversal Check -> Reconnection Models -> Master Jet List logging) using the included batch statistics command-line script.
+In order to check for jet locations and process statistics from the command line, we recommend using the new automated batch script:
 
 1. **Prepare your input file**: Create a `.txt` or `.csv` file (e.g. `times_list.txt`) containing the timestamps you want to check, one per line.
     ```text
@@ -101,9 +93,9 @@ If you prefer not to use the GUI, you can completely automate the entire pipelin
     2015-09-02 17:30:00
     2015-10-16 13:07:00
     ```
-2. **Run the script**: Run `batch_statistics_cli.py` from the `examples/` folder and pass your input file.
+2. **Run the script**: Run `rxn-batch` and pass your input file.
     ```bash
-    python examples/batch_statistics_cli.py --input times_list.txt --probe 3 --format html --outdir ./my_batch_figures
+    rxn-batch --input times_list.txt --probe 3 --format html --outdir ./my_batch_figures
     ```
 
 **Available Options:**
@@ -113,40 +105,13 @@ If you prefer not to use the GUI, you can completely automate the entire pipelin
 - `--data_rate`: MMS data rate (`fast` or `brst`). Defaults to `fast`.
 - `--format`: Format for the saved plots (`html` for interactive Plotly, or `pdf`/`png` for static Matplotlib). Defaults to `html`.
 - `--outdir`: Directory to save the generated plots and CSV. Defaults to `./figures`.
-- `--log-level`: Set the terminal output verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Defaults to `INFO`.
+- `--verbosity`: Set the terminal output verbosity (`0` to `3`). Defaults to `2`.
 
-When run, the script will output its default configurations via a neat table, process each time, print the status, fetch Solar Wind parameters, generate the required plots, and intelligently skip logging duplicate jets to your persistent `~/.rxn_location_master_jets.json` file.
+When run, the script will output its default configurations, process each time, fetch Solar Wind parameters, generate the required plots, and intelligently skip logging duplicate jets to your persistent `~/.rxn_location_master_jets.json` file.
 
-NOTE: Some times, for whatever reason, the MMS data is not downloaded properly by PySPEDAS. In that
-case, please run the following command:
-```
-python -m spd_brst_test.py
-```
+**For more examples and advanced usage (including configuration files), see the [CLI Usage Guide](docs/cli_usage.md).**
 
-This will create two figures in the ```figures``` directory. One figure is from FPI data and another
-frpm FGM data. If those two figures are created properly, that means the MMS data is downloaded and
-you should be able to run the ```jet_reversal_check.py``` code.
-
-Please refer to the code documentation for more details on the code.
-
-Next step would be to produce the reconnection line location figures. This can be done using the 
-following code/command:
-```
-python -m rx_code.py
-```
-
-In order to compute the statistics from the figures, use the following code/command:
-```
-python -m rc_stats.py
-```
-
-Other figures are plotted using Seaborn package and is slightly more involved. You can use the
-following command to generate the figures:
-```
-python -m seaborn_plots.py
-```
-However, sometimes, that gives error depending on some other conditions. Currently we are working on
-fixing that issue.
+NOTE: Sometimes, the MMS data is not downloaded properly by PySPEDAS. In that case, please check your internet connection or use the GUI's Data Cache Dashboard to manage corrupted files.
 
 ## Data
 All the data used to generate the figures in the paper are available in the ```data/study_data```

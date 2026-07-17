@@ -1,5 +1,5 @@
 site_name: rxn_location
-site_url: https://qudsiramiz.github.io/rxn_location/
+site_url: https://qudsiramiz.space/rxn_location/
 repo_url: https://github.com/qudsiramiz/rxn_location
 
 theme:
@@ -42,4 +42,5 @@ plugins:
 nav:
   - Home: index.md
   - GUI Usage Guide: gui_usage.md
+  - CLI Usage Guide: cli_usage.md
   - API Reference: api.md

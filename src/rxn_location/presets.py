@@ -134,7 +134,9 @@ def get_current_params(session_state):
         A dictionary of all sidebar parameters.
     """
     return {
-        "crossing_time_str": session_state.get("crossing_time_str", "2015-09-02 16:45:00"),
+        "crossing_time_str": session_state.get(
+            "crossing_time_str", "2015-09-02 16:45:00"
+        ),
         "mms_probe": session_state.get("preset_mms_probe", 3),
         "dt": session_state.get("preset_dt", 300),
         "jet_len": session_state.get("preset_jet_len", 3),

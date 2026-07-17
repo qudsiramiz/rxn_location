@@ -1763,6 +1763,28 @@ def line_fnc_der(x, y):
 
 
 def target_fnc(r, r0, b_msh, line_fnc, line_intrp):
+    """
+    Objective function used to minimize the distance between the theoretical 
+    X-line curve and the interpolated magnetic surface.
+    
+    Parameters
+    ----------
+    r : float
+        Current radial distance guess.
+    r0 : float
+        Initial reference radial distance.
+    b_msh : array-like
+        Magnetosheath magnetic field vector.
+    line_fnc : function
+        Function describing the theoretical X-line geometry.
+    line_intrp : scipy.interpolate.interp1d
+        Interpolation function of the evaluated magnetic surface.
+    
+    Returns
+    -------
+    float
+        The squared difference to be minimized.
+    """
     p_line = line_fnc(r0=r0, b_msh=b_msh, r=r)
     z_surface = line_intrp(p_line[1])
     return np.sum((p_line[2] - z_surface) ** 2)
@@ -1831,6 +1853,34 @@ def ridge_finder_multiple_interactive(
     fig_version="v001",
     df_jet_reversal=None,
 ):
+    """
+    Finds and extracts the continuous ridge (X-line) locations across multiple 
+    reconnection models and prepares them for interactive Plotly 3D visualization.
+    
+    This function evaluates the specified reconnection models over a 2D spatial grid
+    (Y, Z) and extracts the coordinates of the maximal regions (ridges), representing
+    the theoretical reconnection X-lines.
+    
+    Parameters
+    ----------
+    image : list
+        List of image arrays corresponding to each model.
+    convolution_order : list
+        Order of the convolution applied.
+    t_range : list
+        Time range of the event.
+    mms_probe_num : str
+        Probe number used for plotting title.
+    dr : float
+        Grid resolution.
+    mms_sc_pos : list
+        Spacecraft position vector [X, Y, Z].
+    
+    Returns
+    -------
+    list
+        A list of plotly trace objects representing the 3D X-line.
+    """
     if image is None:
         raise ValueError("No image given")
 

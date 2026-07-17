@@ -7,7 +7,7 @@
 To launch the graphical user interface, simply navigate to the root of your project directory and run the following command in your terminal:
 
 ```bash
-streamlit run src/rxn_location/app.py
+rxn-location-gui
 ```
 
 This will automatically open the interactive GUI in your default web browser.

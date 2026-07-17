@@ -95,9 +95,7 @@ def generate_interactive_plots(
                 )
             if all(c in df_model.columns for c in ["b_imf_x", "b_imf_y", "b_imf_z"]):
                 mag = np.sqrt(
-                    df_model.b_imf_x ** 2
-                    + df_model.b_imf_y ** 2
-                    + df_model.b_imf_z ** 2
+                    df_model.b_imf_x**2 + df_model.b_imf_y**2 + df_model.b_imf_z**2
                 )
                 df_model["cone_angle"] = np.arccos(df_model.b_imf_x / mag) * 180 / np.pi
                 df_model["bb"] = df_model.b_imf_y / mag
@@ -163,11 +161,7 @@ def generate_interactive_plots(
             )
             for i, (df_n, name) in enumerate(zip(df_list, model_names)):
                 row, col = i // 2 + 1, i % 2 + 1
-                if (
-                    len(df_n) > 0
-                    and x_var in df_n.columns
-                    and y_var in df_n.columns
-                ):
+                if len(df_n) > 0 and x_var in df_n.columns and y_var in df_n.columns:
                     fig.add_trace(
                         go.Histogram2d(
                             x=df_n[x_var],
@@ -215,11 +209,7 @@ def generate_interactive_plots(
 
             for i, (df_n, name) in enumerate(zip(df_list, model_names)):
                 row, col = i // 2 + 1, i % 2 + 1
-                if (
-                    len(df_n) > 0
-                    and x_var in df_n.columns
-                    and y_var in df_n.columns
-                ):
+                if len(df_n) > 0 and x_var in df_n.columns and y_var in df_n.columns:
                     # Build hover text with key metadata
                     hover_parts = [
                         f"<b>{name}</b>",
@@ -234,9 +224,13 @@ def generate_interactive_plots(
                         extra_hover.append("Jet Time: %{customdata[0]}")
                     if "Date" in df_n.columns:
                         custom_data.append(df_n["Date"].astype(str).values)
-                        extra_hover.append("Date: %{customdata[" + str(len(custom_data) - 1) + "]}")
+                        extra_hover.append(
+                            "Date: %{customdata[" + str(len(custom_data) - 1) + "]}"
+                        )
 
-                    hovertemplate = "<br>".join(hover_parts + extra_hover) + "<extra></extra>"
+                    hovertemplate = (
+                        "<br>".join(hover_parts + extra_hover) + "<extra></extra>"
+                    )
 
                     scatter_kwargs = dict(
                         x=df_n[x_var],
@@ -247,7 +241,9 @@ def generate_interactive_plots(
                             color=color_list[i],
                             size=7,
                             opacity=0.7,
-                            line=dict(width=0.5, color="white" if dark_mode else "black"),
+                            line=dict(
+                                width=0.5, color="white" if dark_mode else "black"
+                            ),
                         ),
                         hovertemplate=hovertemplate,
                         showlegend=False,

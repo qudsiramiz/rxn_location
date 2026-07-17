@@ -11,6 +11,7 @@ documentation = "https://qudsiramiz.github.io/rxn_location/"
 
 [tool.poetry.scripts]
 rxn-location-gui = "rxn_location.gui:run"
+rxn-batch = "rxn_location.batch_statistics_cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"

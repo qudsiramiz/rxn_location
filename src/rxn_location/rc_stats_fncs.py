@@ -56,7 +56,11 @@ def convert_wide_to_long(df):
 
         # Melt it
         df_long = pd.melt(
-            df, id_vars=id_vars, value_vars=rc_cols, var_name="method_used", value_name="r_rc"
+            df,
+            id_vars=id_vars,
+            value_vars=rc_cols,
+            var_name="method_used",
+            value_name="r_rc",
         )
 
         # Clean up the method_used column
@@ -149,7 +153,28 @@ def plot_hist(
     df_bisec = df[df.method_used == "bisection"].copy()
 
     def safe_cone_angle(df_n):
-        if all(c in df_n.columns for c in ["b_imf_x", "b_imf_y", "b_imf_z"]) and len(df_n) > 0:
+        """
+        Safely calculates the solar wind cone angle from the IMF vector.
+        
+        The cone angle is defined as the angle between the Sun-Earth line (X-axis) 
+        and the IMF vector. It safely handles invalid or zero magnetic field magnitudes.
+        
+        Parameters
+        ----------
+        bx : float
+            The X-component of the Interplanetary Magnetic Field (IMF).
+        b_mag : float
+            The total magnitude of the IMF.
+        
+        Returns
+        -------
+        float
+            The cone angle in degrees. Returns NaN if the inputs are invalid.
+        """
+        if (
+            all(c in df_n.columns for c in ["b_imf_x", "b_imf_y", "b_imf_z"])
+            and len(df_n) > 0
+        ):
             return (
                 np.arccos(
                     df_n.b_imf_x
@@ -242,7 +267,9 @@ def plot_hist(
     else:
         y_label = "Counts"
     fig = plt.figure(num=None, figsize=fig_size, dpi=200, facecolor="k", edgecolor="w")
-    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01, wspace=0.0, hspace=0.0)
+    fig.subplots_adjust(
+        left=0.01, right=0.99, top=0.99, bottom=0.01, wspace=0.0, hspace=0.0
+    )
     gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1])
 
     # Plot the histogram of the shear data
@@ -267,7 +294,12 @@ def plot_hist(
         color=label_color,
     )
     axs1.text(
-        0.05, 0.9, "(a)", fontsize=1.1 * t_label_size, color=label_color, transform=axs1.transAxes
+        0.05,
+        0.9,
+        "(a)",
+        fontsize=1.1 * t_label_size,
+        color=label_color,
+        transform=axs1.transAxes,
     )
     axs1.set_xlim(r_lim[0], r_lim[1])
     axs1.set_xscale("linear")
@@ -296,7 +328,12 @@ def plot_hist(
         color=label_color,
     )
     axs2.text(
-        0.05, 0.9, "(b)", fontsize=1.1 * t_label_size, color=label_color, transform=axs2.transAxes
+        0.05,
+        0.9,
+        "(b)",
+        fontsize=1.1 * t_label_size,
+        color=label_color,
+        transform=axs2.transAxes,
     )
     axs2.set_xlim(r_lim[0], r_lim[1])
     axs2.set_xscale("linear")
@@ -326,12 +363,20 @@ def plot_hist(
         color=label_color,
     )
     axs3.text(
-        0.05, 0.9, "(c)", fontsize=1.1 * t_label_size, color=label_color, transform=axs3.transAxes
+        0.05,
+        0.9,
+        "(c)",
+        fontsize=1.1 * t_label_size,
+        color=label_color,
+        transform=axs3.transAxes,
     )
     axs3.set_xlim(r_lim[0], r_lim[1])
     axs3.set_xscale("linear")
     axs3.set_xlabel(
-        r"$R_{\rm {rc}} [R_{{\rm E}}]$", fontsize=label_size, color=label_color, labelpad=label_pad
+        r"$R_{\rm {rc}} [R_{{\rm E}}]$",
+        fontsize=label_size,
+        color=label_color,
+        labelpad=label_pad,
     )
     axs3.set_ylabel(y_label, fontsize=label_size, color=label_color, labelpad=label_pad)
 
@@ -357,12 +402,20 @@ def plot_hist(
         color=label_color,
     )
     axs4.text(
-        0.05, 0.9, "(d)", fontsize=1.1 * t_label_size, color=label_color, transform=axs4.transAxes
+        0.05,
+        0.9,
+        "(d)",
+        fontsize=1.1 * t_label_size,
+        color=label_color,
+        transform=axs4.transAxes,
     )
     axs4.set_xlim(r_lim[0], r_lim[1])
     axs4.set_xscale("linear")
     axs4.set_xlabel(
-        r"$R_{\rm {rc}} [R_{{\rm E}}]$", fontsize=label_size, color=label_color, labelpad=label_pad
+        r"$R_{\rm {rc}} [R_{{\rm E}}]$",
+        fontsize=label_size,
+        color=label_color,
+        labelpad=label_pad,
     )
     axs4.set_ylabel(y_label, fontsize=label_size, color=label_color, labelpad=label_pad)
     axs4.yaxis.set_label_position("right")

@@ -170,14 +170,9 @@ def plot_hist(
             all(c in df_n.columns for c in ["b_imf_x", "b_imf_y", "b_imf_z"])
             and len(df_n) > 0
         ):
-            return (
-                np.arccos(
-                    df_n.b_imf_x
-                    / np.sqrt(df_n.b_imf_x**2 + df_n.b_imf_y**2 + df_n.b_imf_z**2)
-                )
-                * 180
-                / np.pi
-            )
+            b_mag = np.sqrt(df_n.b_imf_x**2 + df_n.b_imf_y**2 + df_n.b_imf_z**2)
+            cosang = (df_n.b_imf_x / b_mag).where(b_mag > 0).clip(-1, 1)
+            return np.degrees(np.arccos(cosang))
         return pd.Series(dtype=float)
 
     cone_angle_shear = safe_cone_angle(df_shear)

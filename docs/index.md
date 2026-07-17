@@ -24,7 +24,13 @@ from rxn_location import rx_model
 
 To launch the app locally:
 ```bash
-streamlit run src/rxn_location/app.py
+rxn-location-gui
 ```
 
 Check out the [GUI Usage Guide](gui_usage.md) for full details on how to use the interactive application!
+
+## Command Line Interface (CLI)
+
+For headless operations or automated batch processing of timestamps, the software provides a comprehensive CLI (`rxn-batch`).
+
+Check out the [CLI Usage Guide](cli_usage.md) for examples, configuration formats, and the full list of arguments.

@@ -17,7 +17,9 @@ import pandas as pd
 import pytz
 import numpy as np
 
-DEFAULT_MASTER_LIST_PATH = Path(os.path.expanduser("~")) / ".rxn_location_master_jets.json"
+DEFAULT_MASTER_LIST_PATH = (
+    Path(os.path.expanduser("~")) / ".rxn_location_master_jets.json"
+)
 
 
 def load_master_list(path=None):
@@ -199,8 +201,21 @@ def add_jet(entries, data_dict, crossing_time, params, window_minutes=2):
     }
 
     # Add sidebar parameters
-    for key in ["mms_probe", "dt", "jet_len", "data_rate", "level", "coord_type", "time_clip",
-                "tsy_model", "recon_models", "omni_level", "m_p", "dr", "limits"]:
+    for key in [
+        "mms_probe",
+        "dt",
+        "jet_len",
+        "data_rate",
+        "level",
+        "coord_type",
+        "time_clip",
+        "tsy_model",
+        "recon_models",
+        "omni_level",
+        "m_p",
+        "dr",
+        "limits",
+    ]:
         if key in params:
             entry[key] = params[key]
 
@@ -330,6 +345,7 @@ def _to_serializable(value):
         A JSON-serializable version of the value.
     """
     import numpy as np
+
     if isinstance(value, (np.integer,)):
         return int(value)
     if isinstance(value, (np.floating,)):
@@ -450,13 +466,15 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
     if time_start is not None:
         time_start = _parse_time(time_start)
         filtered = [
-            e for e in filtered
+            e
+            for e in filtered
             if _parse_time(e.get("jet_time", e.get("crossing_time"))) >= time_start
         ]
     if time_end is not None:
         time_end = _parse_time(time_end)
         filtered = [
-            e for e in filtered
+            e
+            for e in filtered
             if _parse_time(e.get("jet_time", e.get("crossing_time"))) <= time_end
         ]
 
@@ -468,10 +486,10 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
     # Rename columns to remove 'data_' prefix for compatibility with stats plots
     rename_map = {c: c[5:] for c in df.columns if c.startswith("data_")}
     df.rename(columns=rename_map, inplace=True)
-    
+
     # Duplicate the dataframe 4 times to populate the standard 2x2 plot grid
     models = ["shear", "rx_en", "va_cs", "bisection"]
-    
+
     # We map the standard model names to the exact keys output by the ridge finder.
     # We stripped "data_" earlier, so the column will be "r_rc_Shear", "r_rc_Reconnection Energy", etc.
     model_mapping = {
@@ -480,19 +498,38 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
         "rx_en": "r_rc_Reconnection Energy",
         "va_cs": "r_rc_Exhaust Velocity",
     }
-    
+
     df_list = []
     for model in models:
         df_copy = df.copy()
         df_copy["method_used"] = model
-        
+
         # Check if the theoretical R_rc was computed and saved for this model
         target_col = model_mapping[model]
-        if target_col in df.columns:
-            df_copy["r_rc"] = df[target_col]
+
+        # We will extract the three algorithm versions of this distance
+        conv_col = f"{target_col}_conv"
+        bisec_col = f"{target_col}_bisection"
+        ipv_col = f"{target_col}_ipv"
+
+        if conv_col in df.columns:
+            df_copy["r_rc_conv"] = df[conv_col]
+        elif target_col in df.columns:
+            # Legacy fallback
+            df_copy["r_rc_conv"] = df[target_col]
         else:
-            df_copy["r_rc"] = np.nan
-            
+            df_copy["r_rc_conv"] = np.nan
+
+        if bisec_col in df.columns:
+            df_copy["r_rc_bisection"] = df[bisec_col]
+        else:
+            df_copy["r_rc_bisection"] = np.nan
+
+        if ipv_col in df.columns:
+            df_copy["r_rc_ipv"] = df[ipv_col]
+        else:
+            df_copy["r_rc_ipv"] = np.nan
+
         df_list.append(df_copy)
-        
+
     return pd.concat(df_list, ignore_index=True)

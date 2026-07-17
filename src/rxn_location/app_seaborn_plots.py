@@ -13,15 +13,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 
-
 # ============================================================================
 # SeabornFig2Grid — inline copy to avoid modifying the original
 # ============================================================================
+
 
 class _SeabornFig2Grid:
     """Move a seaborn JointGrid into a subplot of an existing matplotlib figure."""
 
     def __init__(self, seaborngrid, fig, subplot_spec):
+        """
+        Initializes the Streamlit-compatible Seaborn Figure wrapper.
+        """
         self.fig = fig
         self.sg = seaborngrid
         self.subplot = subplot_spec
@@ -34,6 +37,9 @@ class _SeabornFig2Grid:
         self._finalize()
 
     def _movegrid(self):
+        """
+        Overrides the seaborn Grid plotting logic to redirect axes to the Streamlit layout.
+        """
         self._resize()
         n = self.sg.axes.shape[0]
         m = self.sg.axes.shape[1]
@@ -43,6 +49,9 @@ class _SeabornFig2Grid:
                 self._moveaxes(self.sg.axes[i, j], self.subgrid[i, j])
 
     def _movejointgrid(self):
+        """
+        Overrides the seaborn JointGrid plotting logic to redirect axes to the Streamlit layout.
+        """
         h = self.sg.ax_joint.get_position().height
         h2 = self.sg.ax_marg_x.get_position().height
         r = int(np.round(h / h2))
@@ -55,6 +64,9 @@ class _SeabornFig2Grid:
         self._moveaxes(self.sg.ax_marg_y, self.subgrid[1:, -1])
 
     def _moveaxes(self, ax, gs):
+        """
+        Overrides individual seaborn axes rendering to capture the output for Streamlit.
+        """
         ax.remove()
         ax.figure = self.fig
         self.fig.axes.append(ax)
@@ -64,17 +76,24 @@ class _SeabornFig2Grid:
         ax.set_subplotspec(gs)
 
     def _finalize(self):
+        """
+        Finalizes the figure state and pushes it to Streamlit's rendering queue.
+        """
         plt.close(self.sg.fig)
         self.fig.canvas.mpl_connect("resize_event", self._resize)
         self.fig.canvas.draw()
 
     def _resize(self, evt=None):
+        """
+        Handles responsive resizing of the seaborn figures in the Streamlit web layout.
+        """
         self.sg.fig.set_size_inches(self.fig.get_size_inches())
 
 
 # ============================================================================
 # Core plotting functions
 # ============================================================================
+
 
 def _kde_plot_panel(
     df,
@@ -131,7 +150,7 @@ def _kde_plot_panel(
     # Variable marker size legend (concentric circles)
     if marker_size_var == "r_rc":
         radii = np.array([1, 3, 7, 12])
-        radii_size = 3 * radii ** 2
+        radii_size = 3 * radii**2
         # Add scatter plot of circles to show the size of the data points at x=0 and y=0
 
         for i in range(len(radii)):
@@ -156,16 +175,40 @@ def _kde_plot_panel(
 
     # Marginal histograms
     sns.histplot(
-        data=df, x=x, bins=bins[0], ax=jg.ax_marg_x, legend=False,
-        color=color, alpha=alpha, kde=True, log_scale=x_log_scale,
-        stat="frequency", common_norm=True, common_bins=True, fill=True,
-        linewidth=2, edgecolor=color, line_kws={"linewidth": 5, "color": color},
+        data=df,
+        x=x,
+        bins=bins[0],
+        ax=jg.ax_marg_x,
+        legend=False,
+        color=color,
+        alpha=alpha,
+        kde=True,
+        log_scale=x_log_scale,
+        stat="frequency",
+        common_norm=True,
+        common_bins=True,
+        fill=True,
+        linewidth=2,
+        edgecolor=color,
+        line_kws={"linewidth": 5, "color": color},
     )
     sns.histplot(
-        data=df, y=y, bins=bins[1], ax=jg.ax_marg_y, legend=False,
-        color=color, alpha=alpha, kde=True, log_scale=y_log_scale,
-        stat="frequency", common_norm=True, common_bins=True, fill=True,
-        linewidth=2, edgecolor=color, line_kws={"linewidth": 5, "color": color},
+        data=df,
+        y=y,
+        bins=bins[1],
+        ax=jg.ax_marg_y,
+        legend=False,
+        color=color,
+        alpha=alpha,
+        kde=True,
+        log_scale=y_log_scale,
+        stat="frequency",
+        common_norm=True,
+        common_bins=True,
+        fill=True,
+        linewidth=2,
+        edgecolor=color,
+        line_kws={"linewidth": 5, "color": color},
     )
 
     # Styling
@@ -180,12 +223,20 @@ def _kde_plot_panel(
         y_line = spearman * x_line + np.mean(df[y]) - spearman * np.mean(df[x])
         jg.fig.axes[0].plot(x_line, y_line, c=color, ls="--", lw=5)
         jg.fig.axes[0].text(
-            0.02, 0.02,
+            0.02,
+            0.02,
             f"$\\rho_{{\\rm p}}$ = {spearman:.2f}",
-            transform=jg.fig.axes[0].transAxes, va="bottom", ha="left",
-            bbox=dict(facecolor=face_color, alpha=1, edgecolor=edge_color,
-                      boxstyle="round,pad=0.2"),
-            fontsize=ticklabelsize, color=text_color,
+            transform=jg.fig.axes[0].transAxes,
+            va="bottom",
+            ha="left",
+            bbox=dict(
+                facecolor=face_color,
+                alpha=1,
+                edgecolor=edge_color,
+                boxstyle="round,pad=0.2",
+            ),
+            fontsize=ticklabelsize,
+            color=text_color,
         )
 
     # Axis alignment
@@ -205,32 +256,67 @@ def _kde_plot_panel(
         x_label_final = x_label
 
     jg.fig.axes[0].tick_params(
-        axis="both", which="major", direction="in", labelbottom=label_bottom,
-        bottom=True, labeltop=False, top=True, labelleft=True, left=True,
-        labelright=False, right=True, width=1.5, length=ticklength,
-        labelsize=ticklabelsize, labelrotation=0, pad=pad,
+        axis="both",
+        which="major",
+        direction="in",
+        labelbottom=label_bottom,
+        bottom=True,
+        labeltop=False,
+        top=True,
+        labelleft=True,
+        left=True,
+        labelright=False,
+        right=True,
+        width=1.5,
+        length=ticklength,
+        labelsize=ticklabelsize,
+        labelrotation=0,
+        pad=pad,
     )
     jg.fig.axes[0].tick_params(
-        axis="both", which="minor", direction="in", labelbottom=False,
-        bottom=False, left=False, width=1.5, length=ticklength,
-        labelsize=ticklabelsize, labelrotation=0,
+        axis="both",
+        which="minor",
+        direction="in",
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        width=1.5,
+        length=ticklength,
+        labelsize=ticklabelsize,
+        labelrotation=0,
     )
     for ax_idx in (1, 2):
         if ax_idx < len(jg.fig.axes):
             jg.fig.axes[ax_idx].tick_params(
-                axis="both", which="both", direction="in",
-                labelbottom=False, bottom=False, labelleft=False, left=False,
-                width=1.5, length=ticklength, labelsize=ticklabelsize,
+                axis="both",
+                which="both",
+                direction="in",
+                labelbottom=False,
+                bottom=False,
+                labelleft=False,
+                left=False,
+                width=1.5,
+                length=ticklength,
+                labelsize=ticklabelsize,
                 labelrotation=0,
             )
 
     jg.set_axis_labels(x_label_final, y_label, fontsize=labelsize, labelpad=-1)
     jg.fig.axes[0].text(
-        1, 0.02, f"{data_type}",
-        transform=jg.fig.axes[0].transAxes, va="bottom", ha="right",
-        bbox=dict(facecolor=face_color, alpha=1, edgecolor=edge_color,
-                  boxstyle="round,pad=0.2"),
-        fontsize=ticklabelsize, color=text_color,
+        1,
+        0.02,
+        f"{data_type}",
+        transform=jg.fig.axes[0].transAxes,
+        va="bottom",
+        ha="right",
+        bbox=dict(
+            facecolor=face_color,
+            alpha=1,
+            edgecolor=edge_color,
+            boxstyle="round,pad=0.2",
+        ),
+        fontsize=ticklabelsize,
+        color=text_color,
     )
     jg.fig.tight_layout()
 
@@ -267,8 +353,8 @@ def generate_seaborn_jointplots(
         Axis limits.  Auto-calculated when *None*.
     dark_mode : bool
         Apply dark background styling.
-    var_marker_size : bool
-        Scale marker size by ``r_rc`` column values.
+    marker_size_var : str
+        Scale marker size by the specified column name.
     nbins : tuple of int
         Number of bins for (x, y) marginal histograms.
     figsize : tuple of int
@@ -332,7 +418,9 @@ def generate_seaborn_jointplots(
         # Use shear df as reference for b_imf components
         ref = df_list[0] if len(df_list[0]) > 0 else df_full
         if all(c in ref.columns for c in ("b_imf_x", "b_imf_y", "b_imf_z")):
-            bmag = np.sqrt(ref["b_imf_x"] ** 2 + ref["b_imf_y"] ** 2 + ref["b_imf_z"] ** 2)
+            bmag = np.sqrt(
+                ref["b_imf_x"] ** 2 + ref["b_imf_y"] ** 2 + ref["b_imf_z"] ** 2
+            )
             cone = np.arccos(ref["b_imf_x"] / bmag) * 180 / np.pi
             for dfn in df_list:
                 if len(dfn) > 0:
@@ -342,7 +430,9 @@ def generate_seaborn_jointplots(
     if "bb" not in df_full.columns:
         ref = df_list[0] if len(df_list[0]) > 0 else df_full
         if all(c in ref.columns for c in ("b_imf_x", "b_imf_y", "b_imf_z")):
-            bmag = np.sqrt(ref["b_imf_x"] ** 2 + ref["b_imf_y"] ** 2 + ref["b_imf_z"] ** 2)
+            bmag = np.sqrt(
+                ref["b_imf_x"] ** 2 + ref["b_imf_y"] ** 2 + ref["b_imf_z"] ** 2
+            )
             bb_ratio = ref["b_imf_y"] / bmag
             for dfn in df_list:
                 if len(dfn) > 0:
@@ -357,6 +447,9 @@ def generate_seaborn_jointplots(
     }
 
     def get_actual_key(base_key, canon_model, test_df):
+        """
+        Helper to map user-friendly label names back to their raw master jet list keys.
+        """
         if base_key == "r_rc":
             target = model_map_rc.get(canon_model)
             if target:

@@ -3,6 +3,7 @@ import sys
 
 _VERBOSITY = 2
 
+
 def set_verbosity(level):
     """
     Configure global verbosity level:
@@ -39,7 +40,7 @@ def vprint(level, message, color=None):
                 "blue": "\033[94m",
                 "magenta": "\033[95m",
                 "cyan": "\033[96m",
-                "bold": "\033[1m"
+                "bold": "\033[1m",
             }
             reset = "\033[0m"
             c = colors.get(color.lower(), "")

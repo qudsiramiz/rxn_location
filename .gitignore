@@ -146,5 +146,7 @@ src/rxn_location/figures/*
 src/rxn_location/instructions.md
 /figures/*
 examples/figures/*
+examples/interactive_figures/*
+figures_batch/*
 *.pkl
 

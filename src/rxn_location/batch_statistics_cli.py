@@ -559,7 +559,7 @@ def main():
             from rxn_location.app_seaborn_plots import generate_seaborn_jointplots
 
             try:
-                _ = generate_seaborn_jointplots(df_full=master_jets, dark_mode=False)
+                _ = generate_seaborn_jointplots(df_full=df_stats, dark_mode=False)
                 vprint(1, "  -> Done generating Seaborn plots.", color="green")
             except Exception as e:
                 vprint(1, f"  -> Error generating Seaborn plot: {e}", color="red")

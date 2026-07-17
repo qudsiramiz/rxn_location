@@ -1,9 +1,5 @@
 import pytest
-import os
-import sys
-from unittest.mock import patch, MagicMock
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'examples'))
+from unittest.mock import patch
 
 from rxn_location.batch_statistics_cli import parse_args, main
 

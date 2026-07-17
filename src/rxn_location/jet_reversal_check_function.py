@@ -646,6 +646,7 @@ def jet_reversal_check(
         date_obs=date_obs,
         return_plotly_fig=return_plotly_fig,
         dark_mode=dark_mode,
+        figname=figname,
     )
 
     return fig, jet_detection, data_dict
@@ -1057,6 +1058,7 @@ def tplot_fnc(
     date_obs=None,
     return_plotly_fig=False,
     dark_mode=False,
+    figname=None,
 ):
     """
     Plot the data from the MMS spacecraft along with jet detection results
@@ -1083,6 +1085,12 @@ def tplot_fnc(
         The shear value between the magnetosheath and the magnetosphere
     date_obs : datetime.datetime
         The observation date
+    return_plotly_fig : bool
+        Whether to return a Plotly figure instead of saving a tplot. Default is False.
+    dark_mode : bool
+        Whether to use dark mode for the Plotly figure. Default is False.
+    figname : str
+        The full filename to save the tplot figure to. If None, a default name is generated.
 
     Returns
     -------
@@ -1253,21 +1261,20 @@ def tplot_fnc(
         "delta_v_vp_lmn_diff_l" if jet_detection else "vp_lmn_diff_l", opt_dict=delta_v_dict_option
     )
 
-    if jet_detection:
-        folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/jet"
-        # If the folder doesn't exist, create it
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-    else:
-        folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/no_jet"
-        # If the folder doesn't exist, create it
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
+    if figname is None:
+        if jet_detection:
+            folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/jet"
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+        else:
+            folder_name = f"figures/jet_reversal_checks/check_{date_obs}/{data_rate}/no_jet"
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
 
-    figname = (
-        f"{folder_name}/mms{probe}_{t_jet_center.strftime('%Y%m%d_%H%M')}_"
-        + f"{str(ind_crossing).zfill(5)}_{shear_val}s_"
-    )
+        figname = (
+            f"{folder_name}/mms{probe}_{t_jet_center.strftime('%Y%m%d_%H%M')}_"
+            + f"{str(ind_crossing).zfill(5)}_{shear_val}s_"
+        )
 
     if return_plotly_fig:
         from rxn_location.plotly_utils import convert_tplot_to_plotly

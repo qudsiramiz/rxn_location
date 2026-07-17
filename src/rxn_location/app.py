@@ -401,14 +401,15 @@ def main():
         help="Toggle to show tooltip hints on optional parameters.",
     )
 
-    log_level = st.sidebar.selectbox(
-        "Log Level",
-        ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        index=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"].index(st.session_state.get("preset_log_level", "INFO")),
-        help="Set the console logging output level (e.g. for PySPEDAS downloads)." if show_hints else None
+    verbosity = st.sidebar.selectbox(
+        "Verbosity Level",
+        [0, 1, 2, 3],
+        index=[0, 1, 2, 3].index(st.session_state.get("preset_verbosity", 2)),
+        help="0: Silent, 1: Important Only, 2: Standard (No PySPEDAS), 3: All. Default: 2" if show_hints else None
     )
-    st.session_state["preset_log_level"] = log_level
-    logging.getLogger().setLevel(getattr(logging, log_level))
+    st.session_state["preset_verbosity"] = verbosity
+    from rxn_location.logger import set_verbosity
+    set_verbosity(verbosity)
 
 
     # --- Observation Parameters ---
@@ -707,11 +708,11 @@ def main():
 
             _default_recon_models = st.session_state.get(
                 "preset_recon_models",
-                ["shear", "bisection", "reconnection energy", "exhaust velocity"],
+                ["shear", "reconnection energy", "exhaust velocity", "bisection"],
             )
             recon_models = col2.multiselect(
                 "Reconnection Models",
-                ["shear", "bisection", "reconnection energy", "exhaust velocity"],
+                ["shear", "reconnection energy", "exhaust velocity", "bisection"],
                 default=_default_recon_models,
                 help=(
                     "Physics models to calculate the probability of magnetic reconnection."
@@ -943,7 +944,8 @@ def main():
                         "exhaust velocity": {"var_idx": 5, "label": "Exhaust Velocity"},
                     }
 
-                    trange_str = c_time.strftime("%Y-%m-%d %H:%M:%S")
+                    exact_jet_time = det.get("jet_time", c_time) if det is not None else c_time
+                    trange_str = exact_jet_time.strftime("%Y-%m-%d %H:%M:%S")
 
                     model_inputs = {
                         "trange": [trange_str],
@@ -1610,16 +1612,54 @@ def main():
                     f"dr: {entry.get('dr', 'N/A')}"
                 )
 
+                def fmt_val(v, dec=2):
+                    if v is None or (isinstance(v, float) and math.isnan(v)):
+                        return "N/A"
+                    return f"{v:.{dec}f}"
+
+                def fmt_vec(vx, vy, vz, mag=None):
+                    if any(v is None or (isinstance(v, float) and math.isnan(v)) for v in [vx, vy, vz]):
+                        return "N/A"
+                    if mag is None or (isinstance(mag, float) and math.isnan(mag)):
+                        mag = math.sqrt(vx**2 + vy**2 + vz**2)
+                    return f"({vx:.2f}, {vy:.2f}, {vz:.2f}, {mag:.2f})"
+
+                mms_pos = fmt_vec(
+                    entry.get("data_x_gsm"), entry.get("data_y_gsm"), entry.get("data_z_gsm"), entry.get("data_r_spc")
+                )
+                imf_b = fmt_vec(
+                    entry.get("data_sw_b_imf_gsm_x"), entry.get("data_sw_b_imf_gsm_y"), entry.get("data_sw_b_imf_gsm_z")
+                )
+                sw_vel = fmt_vec(
+                    entry.get("data_sw_v_imf_gse_x"), entry.get("data_sw_v_imf_gse_y"), entry.get("data_sw_v_imf_gse_z")
+                )
+
+                jet_time_val = entry.get("data_jet_time", c_time_val)
+                if isinstance(jet_time_val, (pd.Timestamp, datetime.datetime)):
+                    jet_time_val = jet_time_val.strftime("%H:%M:%S")
+                elif isinstance(jet_time_val, str):
+                    jet_time_val = jet_time_val.split(" ")[1] if " " in jet_time_val else jet_time_val
+                    jet_time_val = jet_time_val.split("+")[0]
+
+                date_val = c_time_val.split(" ")[0] if isinstance(c_time_val, str) else "N/A"
+
                 row = {
                     "Select": False,
                     "Event Index": i + 1,
-                    "Crossing Time": c_time_val,
+                    "Date": date_val,
+                    "Time": jet_time_val,
                     "MMS Probe": entry.get("mms_probe", entry.get("data_Probe", "N/A")),
-                    "dt (s)": entry.get("dt", "N/A"),
-                    "Jet Length": entry.get("jet_len", "N/A"),
-                    "Data Rate": entry.get("data_rate", "N/A"),
-                    "Recon. Dist. (Re)": recon_dist_str,
-                    "Cone Angle (deg)": cone_angle,
+                    "MMS Pos [R_E]": mms_pos,
+                    "IMF B [nT]": imf_b,
+                    "SW Dyn. Pressure [nPa]": fmt_val(entry.get("data_sw_p_dyn")),
+                    "Sym-H [nT]": fmt_val(entry.get("data_sw_sym_h")),
+                    "Plasma Vel [km/s]": sw_vel,
+                    "Clock Angle [deg]": clock_angle,
+                    "Cone Angle [deg]": cone_angle,
+                    "Shear Dist. [Re]": fmt_val(entry.get("data_r_rc_Shear")),
+                    "Recon. Energy Dist. [Re]": fmt_val(entry.get("data_r_rc_Reconnection Energy")),
+                    "Exhaust Vel. Dist. [Re]": fmt_val(entry.get("data_r_rc_Exhaust Velocity")),
+                    "Bisection Dist. [Re]": fmt_val(entry.get("data_r_rc_Bisection Field")),
                     "Model Parameters": mod_params,
                     "_original_index": i,
                 }
@@ -1641,7 +1681,7 @@ def main():
                 display_df = temp_df.replace(float("nan"), "N/A")
                 
                 # Highlight the sorted column by renaming it
-                highlight_name = f"⬇ **{sort_by}**"
+                highlight_name = f"{sort_by} 🔽"
                 display_df = display_df.rename(columns={sort_by: highlight_name})
             else:
                 highlight_name = None
@@ -1652,10 +1692,19 @@ def main():
                 "Select": st.column_config.CheckboxColumn("Select", help="Select rows to delete", default=False),
                 "_original_index": None, # Hide this column
             }
+            
+            col_helps = {
+                "MMS Pos [R_E]": "MMS Position Vector (X, Y, Z, R) in R_E GSM coordinates",
+                "IMF B [nT]": "Interplanetary Magnetic Field Vector (X, Y, Z, |B|) in nT",
+                "Plasma Vel [km/s]": "Solar Wind Plasma Velocity Vector (X, Y, Z, |V|) in km/s",
+            }
+
             # Make all other columns disabled
             for col in display_df.columns:
                 if col not in ["Select", "_original_index"]:
-                    col_config[col] = st.column_config.TextColumn(col, disabled=True)
+                    base_col = col.replace(" 🔽", "")
+                    help_str = col_helps.get(base_col, None)
+                    col_config[col] = st.column_config.TextColumn(col, disabled=True, help=help_str)
                     
             edited_df = st.data_editor(
                 display_df,

@@ -6,7 +6,7 @@
 
 # 1. Path to the input file containing the list of times (required)
 --input
-data/jet_reconnection_list_test.txt
+data/jet_reconnection_list.txt
 
 # 2. Advanced Jet Reversal Parameters
 --dt
@@ -37,12 +37,15 @@ T96
 # 5. Output and Plotting Formatting
 --format
 png
+# Use matplotlib as the default engine for the jet plot
+--plot_engine
+matplotlib
 --outdir
 ./figures_batch
 --csv_name
 my_batch_reconnection_stats.csv
---log-level
-WARNING
+--verbosity
+1
 
 # 6. Optional Flags (do not put a value on the next line for flags, just the flag itself)
 --plot-seaborn

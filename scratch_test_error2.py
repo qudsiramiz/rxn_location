@@ -85,7 +85,7 @@ try:
     }
     
     print("Testing ridge_finder_multiple")
-    ridge_finder_multiple(**figure_inputs)
+    _, _, _, _ = ridge_finder_multiple(**figure_inputs)
     print("Success")
 except Exception as e:
     import traceback

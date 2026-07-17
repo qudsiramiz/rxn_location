@@ -175,7 +175,7 @@ for mms_probe_num in mms_probe_num_list[2:3]:
                 f"Saved figure inputs to data/rx_d/plot_inputs_mms{mms_probe_num}_{ind_range}.pkl for fast replotting."
             )
 
-        y_vals, x_intr_vals_list, y_intr_vals_list = rmf.ridge_finder_multiple(**figure_inputs)
+        y_vals, x_intr_vals_list, y_intr_vals_list, _ = rmf.ridge_finder_multiple(**figure_inputs)
 
         # Also generate the interactive Plotly widget!
         _ = rmf.ridge_finder_multiple_interactive(**figure_inputs)

@@ -19,8 +19,7 @@ def format_latex(text):
     Returns
     -------
     str
-        The formatted LaTeX string wrapped in $$ for Plotly rendering.
-    """
+        The formatted string with Plotly-friendly HTML (e.g., <sub>/<sup>) for rendering.
     if not text:
         return text
     text = str(text)

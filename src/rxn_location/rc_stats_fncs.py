@@ -158,10 +158,8 @@ def plot_hist(
         
         Parameters
         ----------
-        bx : float
-            The X-component of the Interplanetary Magnetic Field (IMF).
-        b_mag : float
-            The total magnitude of the IMF.
+        df_n : pandas.DataFrame
+            DataFrame containing the IMF components `b_imf_x`, `b_imf_y`, and `b_imf_z`.
         
         Returns
         -------

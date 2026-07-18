@@ -21,3 +21,12 @@ def test_pytz_is_declared_as_a_runtime_dependency():
     dependencies = pyproject["tool"]["poetry"]["dependencies"]
 
     assert "pytz" in dependencies
+
+
+def test_pytz_is_locked_in_the_main_dependency_group():
+    poetry_lock = tomllib.loads((REPO_ROOT / "poetry.lock").read_text())
+    pytz_package = next(
+        package for package in poetry_lock["package"] if package["name"] == "pytz"
+    )
+
+    assert "main" in pytz_package.get("groups", [])

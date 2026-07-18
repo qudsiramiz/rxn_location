@@ -460,6 +460,7 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
     -------
     pandas.DataFrame or None
         A DataFrame compatible with the statistics plotting functions, or None if no matching entries.
+    """
     if not entries:
         return None
 

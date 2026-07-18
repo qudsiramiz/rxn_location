@@ -14,6 +14,11 @@ The OMNI data is from [OMNIWeb](https://omniweb.gsfc.nasa.gov/).
 The repository is archived using Zenodo with the following DOI:
 [![DOI](https://zenodo.org/badge/669151405.svg)](https://zenodo.org/badge/latestdoi/669151405)
 
+## Documentation
+Full documentation, including API reference, CLI usage guides, and theoretical background, is available at:
+**[https://qudsiramiz.space/rxn_location/](https://qudsiramiz.space/rxn_location/)**
+
+
 ## Description
 This repository contains the code and data used to generate figures in the paper "Statistical
 comparison of various dayside magnetopause reconnection X-line prediction models" by Ramiz A. Qudsi,

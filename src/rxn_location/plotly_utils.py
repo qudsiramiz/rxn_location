@@ -10,16 +10,17 @@ import re
 def format_latex(text):
     """
     Formats text strings into LaTeX math strings for Plotly annotations.
-    
+
     Parameters
     ----------
     text : str
         The raw text string, which may contain underscores or greek letter names.
-    
+
     Returns
     -------
     str
         The formatted string with Plotly-friendly HTML (e.g., <sub>/<sup>) for rendering.
+    """
     if not text:
         return text
     text = str(text)

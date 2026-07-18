@@ -63,8 +63,8 @@ Once Poetry is installed, the dependencies can be installed using:
 ```
 poetry install
 ```
-This assumes that the code has been cloned to the local machine and that ```poetry.lock``` and
-```pyproject.toml``` are present in the root directory of the repository.
+This assumes that the code has been cloned to the local machine and that
+```pyproject.toml``` is present in the root directory of the repository.
 
 Once the dependencies are installed, start the virtual environment using:
 ```

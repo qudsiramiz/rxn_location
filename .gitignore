@@ -150,3 +150,6 @@ examples/interactive_figures/*
 figures_batch/*
 *.pkl
 
+# Poetry
+poetry.lock
+

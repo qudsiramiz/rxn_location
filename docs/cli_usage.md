@@ -4,6 +4,10 @@ While `rxn_location` features a rich interactive graphical interface (`rxn-locat
 
 ## Basic Usage
 
+> [!IMPORTANT]
+> **Virtual Environment Highly Recommended**
+> Before running any commands, make sure you have activated the virtual environment where you installed the package. If you used `venv`, activate it via `source venv/bin/activate` (or `venv\Scripts\activate` on Windows). If you used Poetry, start your shell via `poetry shell`. If you don't activate the environment, the `rxn-batch` command will not be found.
+
 The primary requirement for `rxn-batch` is an input file containing a list of target timestamps you wish to process.
 
 ```bash

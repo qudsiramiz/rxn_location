@@ -1,73 +1,81 @@
-# Reconnection line location
+# Reconnection line location (`rxn_location`)
 
 ## Introduction
-Statistical comparison between X-line location predicted by various models for dayside terrestrial
-magnetopause. The models used are:
+`rxn_location` is a comprehensive Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
+
+The package predicts the X-line location based on four primary models:
 1. [Maximum Shear Model](https://doi.org/10.1029/2007JA012270)
-2. [ Maximum Reconnection Energy](https://doi.org/10.1063/1.4811467)
+
+2. [Maximum Reconnection Energy](https://doi.org/10.1063/1.4811467)
+
 3. [Maximum Exhaust Velocity](https://doi.org/10.1063/1.2795630)
+
 4. [Maximum Bisection Field](https://doi.org/10.1029/2002JA009381)
 
-The MMS data used in this study is from [MMS](https://lasp.colorado.edu/mms/sdc/public/) mission.
-The OMNI data is from [OMNIWeb](https://omniweb.gsfc.nasa.gov/).
+The MMS data used by this software is automatically fetched from the [MMS](https://lasp.colorado.edu/mms/sdc/public/) mission, and OMNI solar wind data is fetched from [OMNIWeb](https://omniweb.gsfc.nasa.gov/).
 
 The repository is archived using Zenodo with the following DOI:
 [![DOI](https://zenodo.org/badge/669151405.svg)](https://zenodo.org/badge/latestdoi/669151405)
 
 ## Documentation
 Full documentation, including API reference, CLI usage guides, and theoretical background, is available at:
-**[https://qudsiramiz.space/rxn_location/](https://qudsiramiz.space/rxn_location/)**
-
+**[rxn_location](https://qudsiramiz.space/rxn_location/)**
 
 ## Description
-This repository contains the code and data used to generate figures in the paper "Statistical
-comparison of various dayside magnetopause reconnection X-line prediction models" by Ramiz A. Qudsi,
-Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland.
+This package originally started as the repository for generating the figures in the paper "Statistical comparison of various dayside magnetopause reconnection X-line prediction models" (by Ramiz A. Qudsi, Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland). It has since evolved into a software tool suite for both individual jet event analysis and aggregated statistical modeling.
 
 ## Code
-The code is written for Python 3.11 or later and has the following dependencies:
+The code is written for Python 3.11 or later. All dependencies are managed automatically via `pyproject.toml` and will be installed when you install the package. 
 
+Key scientific and visualization libraries used by `rxn_location` include:
+- `spacepy` & `pyspedas` (for MMS and OMNI data retrieval and physics algorithms)
+- `streamlit` (for the interactive graphical interface)
+- `plotly`, `seaborn`, & `matplotlib` (for interactive 3D and statistical visualizations)
+- `scikit-image` (for the bisection and IVP ridge-finding models)
+- `joblib` (for parallelized batch processing)
+
+### Installation & Setup
+Since the code has many dependencies (including SpacePy and PySPEDAS, which can sometimes be tricky to install), we highly recommend using a virtual environment. You can install the package directly from PyPI (recommended), from GitHub, or by cloning the repository to install it locally.
+
+#### Option 1: Install from PyPI (Recommended)
+The easiest way to get started and use the `rxn-location-gui` and `rxn-batch` tools is to install the latest stable release directly from PyPI into a virtual environment:
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install rxn-location
 ```
-[tool.poetry.dependencies]
-python = ">=3.11,<4.0"
-spacepy = "^0.7.0"
-pyspedas = "^2.1.3"
-tabulate = "^0.9.0"
-trjtrypy = "^0.0.0"
-joblib = "^1.3.1"
-ipython = "^9.15.0"
-h5py = "^3.9.0"
-scikit-image = "^0.26.0"
-more-itertools = "^11.1.0"
-seaborn = "^0.13.2"
-matplotlib = "^3.11.0"
 
-[tool.poetry.dev-dependencies]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+#### Option 2: Install Directly from GitHub
+If you want the absolute latest development version without modifying the source code, you can install directly from the GitHub repository:
+```bash
+pip install git+https://github.com/qudsiramiz/rxn_location.git
 ```
-### Running the code
-The code can be run using python or ipython. Since the code has a lot of dependencies, it is
-recommended to use a virtual environment.
-Since the package uses SpacePy and PySPEDAS, installation of which can be a bit tricky becasue of
-internal dependencies, we strongly recommend using Poetry to install the dependencies and run the
-code.
 
-Poetry can be installed using pip:
+#### Option 3: Clone and Install Locally (Standard Python)
+If you want to explore the source code, run examples, or contribute, you should clone the repository first:
+```bash
+git clone https://github.com/qudsiramiz/rxn_location.git
+cd rxn_location
+
+# Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install the package in editable mode
+pip install -e .
 ```
+
+#### Option 4: Clone and Install Locally (Poetry)
+If you prefer using [Poetry](https://python-poetry.org/) for dependency management:
+```bash
+git clone https://github.com/qudsiramiz/rxn_location.git
+cd rxn_location
+
+# Install Poetry (if you don't have it)
 pip install poetry
-```
-Once Poetry is installed, the dependencies can be installed using:
-```
-poetry install
-```
-This assumes that the code has been cloned to the local machine and that
-```pyproject.toml``` is present in the root directory of the repository.
 
-Once the dependencies are installed, start the virtual environment using:
-```
+# Install dependencies and start the environment
+poetry install
 poetry shell
 ```
 
@@ -76,6 +84,7 @@ poetry shell
 The easiest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize 3D reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
 
 **Recent GUI Features include:**
+
 - **Master Jet List**: Persistent JSON storage of detected jets with automatic 2-minute deduplication across sessions. Now automatically fetches and saves contextual Solar Wind parameters (B_IMF, V_IMF, Np, Tp, Sym-H, Clock Angle, P_dyn).
 - **Interactive Data Table**: View, sort, manually prune, and export (CSV/JSON/Pickle) your master jet list. Features high-quality Unicode formatting for variables.
 - **Duplicate Jet Dialog**: Safety checks when generating models to prevent processing the same jet multiple times.

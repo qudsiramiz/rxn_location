@@ -4,6 +4,10 @@
 
 ## Launching the App
 
+> [!IMPORTANT]
+> **Virtual Environment Highly Recommended**
+> Before running the GUI, make sure you have activated the virtual environment where you installed the package. If you used `venv`, activate it via `source venv/bin/activate` (or `venv\Scripts\activate` on Windows). If you used Poetry, start your shell via `poetry shell`. If you don't activate the environment, the `rxn-location-gui` command will not be found.
+
 To launch the graphical user interface, simply navigate to the root of your project directory and run the following command in your terminal:
 
 ```bash

@@ -255,7 +255,14 @@ def plot_hist(
     y_label = "Density" if density else "Counts"
     facecolor = "k" if dark_mode else "w"
     edgecolor = "w" if dark_mode else "k"
-    fig = plt.figure(num=None, figsize=fig_size, dpi=200, facecolor=facecolor, edgecolor=edgecolor)
+    fig = plt.figure(
+        num=None,
+        figsize=fig_size,
+        dpi=200,
+        facecolor=facecolor,
+        edgecolor=edgecolor,
+    )
+    fig.subplots_adjust(
         left=0.01, right=0.99, top=0.99, bottom=0.01, wspace=0.0, hspace=0.0
     )
     gs = gridspec.GridSpec(2, 2, width_ratios=[1, 1])

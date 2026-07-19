@@ -2482,6 +2482,17 @@ def main():
                         col, col.replace("_", " ").title()
                     )
 
+                for suffix in ["", "_conv", "_bisection", "_ipv"]:
+                    generic_key = f"r_rc{suffix}"
+                    for model_col in ["r_rc_Shear", "r_rc_Bisection Field", "r_rc_Reconnection Energy", "r_rc_Exhaust Velocity"]:
+                        check_col = f"{model_col}{suffix}"
+                        if check_col in stats_df.columns or f"data_{check_col}" in stats_df.columns:
+                            label_suffix = f" ({suffix.strip('_').title()})" if suffix else ""
+                            var_options[generic_key] = base_var_options.get(
+                                generic_key, f"Reconnection Distance{label_suffix} [$R_E$]"
+                            )
+                            break
+
                 available_vars = list(var_options.keys())
                 default_x = (
                     ["b_imf_z"]

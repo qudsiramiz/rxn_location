@@ -1,7 +1,7 @@
 # Reconnection line location (`rxn_location`)
 
 ## Introduction
-`rxn_location` is a comprehensive Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
+`rxn_location` is a Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
 
 The package predicts the X-line location based on four primary models:
 1. [Maximum Shear Model](https://doi.org/10.1029/2007JA012270)

@@ -450,13 +450,17 @@ def generate_seaborn_jointplots(
         """
         Helper to map user-friendly label names back to their raw master jet list keys.
         """
-        if base_key == "r_rc":
+        if base_key.startswith("r_rc"):
             target = model_map_rc.get(canon_model)
             if target:
-                if f"data_{target}" in test_df.columns:
-                    return f"data_{target}"
-                if target in test_df.columns:
-                    return target
+                suffix = base_key[4:]
+                if suffix and not suffix.startswith("_"):
+                    suffix = f"_{suffix}"
+                target_with_suffix = f"{target}{suffix}"
+                if f"data_{target_with_suffix}" in test_df.columns:
+                    return f"data_{target_with_suffix}"
+                if target_with_suffix in test_df.columns:
+                    return target_with_suffix
         return base_key
 
     # --- Auto-calculate limits ---
@@ -512,7 +516,7 @@ def generate_seaborn_jointplots(
 
         msz = 100
         if marker_size_var != "None" and act_marker in df.columns:
-            if marker_size_var == "r_rc":
+            if marker_size_var.startswith("r_rc"):
                 msz = 3 * df[act_marker].values ** 2
             else:
                 vals = df[act_marker].values

@@ -270,6 +270,7 @@ def ridge_finder_multiple(
     save_rc_file=False,
     fig_version="v001",
     df_jet_reversal=None,
+    **kwargs,
 ):
     r"""
     Finds ridges in an image and plot the points with maximum ridge value on the given image.
@@ -1852,6 +1853,7 @@ def ridge_finder_multiple_interactive(
     save_rc_file=False,
     fig_version="v001",
     df_jet_reversal=None,
+    **kwargs,
 ):
     """
     Finds and extracts the continuous ridge (X-line) locations across multiple 

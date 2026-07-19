@@ -1,7 +1,7 @@
 # Reconnection line location (`rxn_location`)
 
 ## Introduction
-`rxn_location` is a comprehensive Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
+`rxn_location` is a Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
 
 The package predicts the X-line location based on four primary models:
 
@@ -16,16 +16,16 @@ The repository is archived using Zenodo with the following DOI:
 [![DOI](https://zenodo.org/badge/669151405.svg)](https://zenodo.org/badge/latestdoi/669151405)
 
 ## Description
-This package originally started as the repository for generating the figures in the paper "Statistical comparison of various dayside magnetopause reconnection X-line prediction models" (by Ramiz A. Qudsi, Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland). It has since evolved into a software tool suite for both individual jet event analysis and aggregated statistical modeling.
+This package originally started as the repository for generating the figures in the paper ["Statistical comparison of various dayside magnetopause reconnection X-line prediction models"](https://doi.org/10.1029/2023JA031644) (by Ramiz A. Qudsi, Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland). It has since evolved into a software tool suite for both individual jet event analysis and aggregated statistical modeling.
 
 ## Code
-The code is written for Python 3.11 or later. All dependencies are managed automatically via `pyproject.toml` and will be installed when you install the package. 
+The code is written for Python 3.11 or later. All dependencies are managed automatically via `pyproject.toml` and will be installed when you install the package.
 
 Key scientific and visualization libraries used by `rxn_location` include:
 
 - `spacepy` & `pyspedas` (for MMS and OMNI data retrieval and physics algorithms)
 - `streamlit` (for the interactive graphical interface)
-- `plotly`, `seaborn`, & `matplotlib` (for interactive 3D and statistical visualizations)
+- `plotly`, `seaborn`, & `matplotlib` (for interactive and statistical visualizations)
 - `scikit-image` (for the bisection and IVP ridge-finding models)
 - `joblib` (for parallelized batch processing)
 

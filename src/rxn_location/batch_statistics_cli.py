@@ -146,24 +146,6 @@ def parse_args():
         choices=["plotly", "matplotlib"],
         help="Engine used to plot the jet reversal check (plotly or matplotlib). Default: plotly",
     )
-    parser.add_argument(
-        "--no_plot_orig_xline",
-        action="store_false",
-        dest="plot_orig_xline",
-        help="Disable plotting the original convolution X-line.",
-    )
-    parser.add_argument(
-        "--no_plot_bisec_xline",
-        action="store_false",
-        dest="plot_bisec_xline",
-        help="Disable plotting the Bisection X-line.",
-    )
-    parser.add_argument(
-        "--no_plot_ivp_xline",
-        action="store_false",
-        dest="plot_ivp_xline",
-        help="Disable plotting the IVP X-line.",
-    )
     return parser.parse_args()
 
 
@@ -449,9 +431,6 @@ def main():
                 "rc_file_name": args.csv_name,
                 "rc_folder": args.outdir,
                 "df_jet_reversal": det,
-                "plot_orig_xline": getattr(args, "plot_orig_xline", True),
-                "plot_bisec_xline": getattr(args, "plot_bisec_xline", True),
-                "plot_ivp_xline": getattr(args, "plot_ivp_xline", True),
                 "b_grids": (
                     (res[0], res[1], res[2], res[12], res[13], res[14])
                     if "res" in locals() and res

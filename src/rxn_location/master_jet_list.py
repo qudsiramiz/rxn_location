@@ -509,28 +509,10 @@ def master_list_to_stats_csv(entries, time_start=None, time_end=None):
         # Check if the theoretical R_rc was computed and saved for this model
         target_col = model_mapping[model]
 
-        # We will extract the three algorithm versions of this distance
-        conv_col = f"{target_col}_conv"
-        bisec_col = f"{target_col}_bisection"
-        ipv_col = f"{target_col}_ipv"
-
-        if conv_col in df.columns:
-            df_copy["r_rc_conv"] = df[conv_col]
-        elif target_col in df.columns:
-            # Legacy fallback
-            df_copy["r_rc_conv"] = df[target_col]
+        if target_col in df.columns:
+            df_copy["r_rc"] = df[target_col]
         else:
-            df_copy["r_rc_conv"] = np.nan
-
-        if bisec_col in df.columns:
-            df_copy["r_rc_bisection"] = df[bisec_col]
-        else:
-            df_copy["r_rc_bisection"] = np.nan
-
-        if ipv_col in df.columns:
-            df_copy["r_rc_ipv"] = df[ipv_col]
-        else:
-            df_copy["r_rc_ipv"] = np.nan
+            df_copy["r_rc"] = np.nan
 
         df_list.append(df_copy)
 

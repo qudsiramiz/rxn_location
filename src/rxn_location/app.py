@@ -808,14 +808,7 @@ def main():
             )
             st.session_state["preset_recon_models"] = recon_models
             st.markdown("##### Plotting Options")
-            col3, col4, col5 = st.columns(3)
-            st.session_state["plot_orig_xline"] = col3.checkbox(
-                "Original (Conv)", value=True
-            )
-            st.session_state["plot_bisec_xline"] = col4.checkbox(
-                "Bisection", value=True
-            )
-            st.session_state["plot_ivp_xline"] = col5.checkbox("IVP", value=True)
+            # Removed the checkbox layout since there's only one model now
 
             _omni_options = ["hro_1min", "hro_5min"]
             _default_omni = st.session_state.get("preset_omni_level", "hro_1min")
@@ -1162,13 +1155,6 @@ def main():
                         "tsy_model": tsy_model,
                         "dark_mode": is_dark_mode,
                         "b_grids": (res[0], res[1], res[2], res[12], res[13], res[14]),
-                        "plot_orig_xline": st.session_state.get(
-                            "plot_orig_xline", True
-                        ),
-                        "plot_bisec_xline": st.session_state.get(
-                            "plot_bisec_xline", True
-                        ),
-                        "plot_ivp_xline": st.session_state.get("plot_ivp_xline", True),
                         "save_rc_file": save_data,
                         "rc_file_name": csv_name,
                         "rc_folder": "./",
@@ -1793,21 +1779,9 @@ def main():
                 # Compute average Recon. Dist. if models exist
                 rc_keys = [
                     "data_r_rc_Shear",
-                    "data_r_rc_Shear_conv",
-                    "data_r_rc_Shear_bisection",
-                    "data_r_rc_Shear_ipv",
                     "data_r_rc_Bisection Field",
-                    "data_r_rc_Bisection Field_conv",
-                    "data_r_rc_Bisection Field_bisection",
-                    "data_r_rc_Bisection Field_ipv",
                     "data_r_rc_Exhaust Velocity",
-                    "data_r_rc_Exhaust Velocity_conv",
-                    "data_r_rc_Exhaust Velocity_bisection",
-                    "data_r_rc_Exhaust Velocity_ipv",
                     "data_r_rc_Reconnection Energy",
-                    "data_r_rc_Reconnection Energy_conv",
-                    "data_r_rc_Reconnection Energy_bisection",
-                    "data_r_rc_Reconnection Energy_ipv",
                 ]
                 rc_vals = []
                 for k in rc_keys:
@@ -1896,48 +1870,17 @@ def main():
                     "Plasma Vel [km/s] (GSE)": sw_vel,
                     "Clock Angle [deg]": clock_angle,
                     "Cone Angle [deg]": cone_angle,
-                    "Shear (Conv) [Re]": fmt_val(
-                        entry.get("data_r_rc_Shear_conv", entry.get("data_r_rc_Shear"))
+                    "Shear [Re]": fmt_val(
+                        entry.get("data_r_rc_Shear")
                     ),
-                    "Shear (Bisec) [Re]": fmt_val(
-                        entry.get("data_r_rc_Shear_bisection")
+                    "Recon. Eng [Re]": fmt_val(
+                        entry.get("data_r_rc_Reconnection Energy")
                     ),
-                    "Shear (IVP) [Re]": fmt_val(entry.get("data_r_rc_Shear_ipv")),
-                    "Recon. Eng (Conv) [Re]": fmt_val(
-                        entry.get(
-                            "data_r_rc_Reconnection Energy_conv",
-                            entry.get("data_r_rc_Reconnection Energy"),
-                        )
+                    "Exhaust Vel. [Re]": fmt_val(
+                        entry.get("data_r_rc_Exhaust Velocity")
                     ),
-                    "Recon. Eng (Bisec) [Re]": fmt_val(
-                        entry.get("data_r_rc_Reconnection Energy_bisection")
-                    ),
-                    "Recon. Eng (IVP) [Re]": fmt_val(
-                        entry.get("data_r_rc_Reconnection Energy_ipv")
-                    ),
-                    "Exhaust Vel. (Conv) [Re]": fmt_val(
-                        entry.get(
-                            "data_r_rc_Exhaust Velocity_conv",
-                            entry.get("data_r_rc_Exhaust Velocity"),
-                        )
-                    ),
-                    "Exhaust Vel. (Bisec) [Re]": fmt_val(
-                        entry.get("data_r_rc_Exhaust Velocity_bisection")
-                    ),
-                    "Exhaust Vel. (IVP) [Re]": fmt_val(
-                        entry.get("data_r_rc_Exhaust Velocity_ipv")
-                    ),
-                    "Bisec Field (Conv) [Re]": fmt_val(
-                        entry.get(
-                            "data_r_rc_Bisection Field_conv",
-                            entry.get("data_r_rc_Bisection Field"),
-                        )
-                    ),
-                    "Bisec Field (Bisec) [Re]": fmt_val(
-                        entry.get("data_r_rc_Bisection Field_bisection")
-                    ),
-                    "Bisec Field (IVP) [Re]": fmt_val(
-                        entry.get("data_r_rc_Bisection Field_ipv")
+                    "Bisec Field [Re]": fmt_val(
+                        entry.get("data_r_rc_Bisection Field")
                     ),
                     "Model Parameters": mod_params,
                     "_original_index": i,
@@ -1995,18 +1938,10 @@ def main():
                     "Sym-H [nT]": "Sym-H index",
                     "Clock Angle [deg]": "IMF Clock Angle",
                     "Cone Angle [deg]": "IMF Cone Angle",
-                    "Shear (Conv) [Re]": "Distance to the Maximum Magnetic Shear X-line (Computed using Convolution method)",
-                    "Shear (Bisec) [Re]": "Distance to the Maximum Magnetic Shear X-line (Computed using Bisection method)",
-                    "Shear (IVP) [Re]": "Distance to the Maximum Magnetic Shear X-line (Computed using IVP method)",
-                    "Recon. Eng (Conv) [Re]": "Distance to the Maximum Reconnection Energy X-line (Computed using Convolution method)",
-                    "Recon. Eng (Bisec) [Re]": "Distance to the Maximum Reconnection Energy X-line (Computed using Bisection method)",
-                    "Recon. Eng (IVP) [Re]": "Distance to the Maximum Reconnection Energy X-line (Computed using IVP method)",
-                    "Exhaust Vel. (Conv) [Re]": "Distance to the Maximum Exhaust Velocity X-line (Computed using Convolution method)",
-                    "Exhaust Vel. (Bisec) [Re]": "Distance to the Maximum Exhaust Velocity X-line (Computed using Bisection method)",
-                    "Exhaust Vel. (IVP) [Re]": "Distance to the Maximum Exhaust Velocity X-line (Computed using IVP method)",
-                    "Bisec Field (Conv) [Re]": "Distance to the Minimum Bisection Field X-line (Computed using Convolution method)",
-                    "Bisec Field (Bisec) [Re]": "Distance to the Minimum Bisection Field X-line (Computed using Bisection method)",
-                    "Bisec Field (IVP) [Re]": "Distance to the Minimum Bisection Field X-line (Computed using IVP method)",
+                    "Shear [Re]": "Distance to the Maximum Magnetic Shear X-line",
+                    "Recon. Eng [Re]": "Distance to the Maximum Reconnection Energy X-line",
+                    "Exhaust Vel. [Re]": "Distance to the Maximum Exhaust Velocity X-line",
+                    "Bisec Field [Re]": "Distance to the Minimum Bisection Field X-line",
                     "Model Parameters": "Tsyganenko model and grid parameters used for these results",
                 }
             else:
@@ -2482,16 +2417,12 @@ def main():
                         col, col.replace("_", " ").title()
                     )
 
-                for suffix in ["", "_conv", "_bisection", "_ipv"]:
-                    generic_key = f"r_rc{suffix}"
-                    for model_col in ["r_rc_Shear", "r_rc_Bisection Field", "r_rc_Reconnection Energy", "r_rc_Exhaust Velocity"]:
-                        check_col = f"{model_col}{suffix}"
-                        if check_col in stats_df.columns or f"data_{check_col}" in stats_df.columns:
-                            label_suffix = f" ({suffix.strip('_').title()})" if suffix else ""
-                            var_options[generic_key] = base_var_options.get(
-                                generic_key, f"Reconnection Distance{label_suffix} [$R_E$]"
-                            )
-                            break
+                for model_col in ["r_rc_Shear", "r_rc_Bisection Field", "r_rc_Reconnection Energy", "r_rc_Exhaust Velocity"]:
+                    if model_col in stats_df.columns or f"data_{model_col}" in stats_df.columns:
+                        var_options["r_rc"] = base_var_options.get(
+                            "r_rc", "Reconnection Distance [$R_E$]"
+                        )
+                        break
 
                 available_vars = list(var_options.keys())
                 default_x = (

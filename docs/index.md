@@ -26,7 +26,7 @@ Key scientific and visualization libraries used by `rxn_location` include:
 - `spacepy` & `pyspedas` (for MMS and OMNI data retrieval and physics algorithms)
 - `streamlit` (for the interactive graphical interface)
 - `plotly`, `seaborn`, & `matplotlib` (for interactive and statistical visualizations)
-- `scikit-image` (for the bisection and IVP ridge-finding models)
+- `scikit-image` (for ridge-finding models)
 - `joblib` (for parallelized batch processing)
 
 ### Installation & Setup

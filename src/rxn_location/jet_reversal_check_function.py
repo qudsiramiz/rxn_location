@@ -23,13 +23,15 @@ def jet_reversal_check(
     time_clip=True,
     latest_version=False,
     jet_len=5,
-    figname="mms_jet_reversal_check",
+    figname=None,
     date_obs=None,
     fname="data/mms_jet_reversal_times.csv",
     error_file_log_name="data/mms_jet_reversal_check_error_log.csv",
     verbose=True,
     return_plotly_fig=False,
     dark_mode=False,
+    save_pytplot=True,
+    save_delta_v=True,
 ):
     """
     For a given crossing time and a given probe, the function finds out if MMS observed a jet
@@ -87,6 +89,9 @@ def jet_reversal_check(
 
     # Define the Boltzmann constant in J K^-1
     k_B = 1.38064852e-23
+
+    if date_obs is None and crossing_time is not None:
+        date_obs = crossing_time.strftime("%Y%m%d")
 
     # Define the conversion factor for converting temperature from ev to K
     ev_to_K = 11604.525
@@ -1000,21 +1005,22 @@ def check_jet_location(
         )
         save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/no_jet/"
 
-    if not os.path.exists(save_folder):
-        os.makedirs(save_folder)
+    if save_delta_v:
+        if not os.path.exists(save_folder):
+            os.makedirs(save_folder)
 
-    fig_name = f"{save_folder}/delta_v_{t_jet_center.strftime('%Y-%m-%d_%H-%M-%S')}.png"
+        fig_name = f"{save_folder}/delta_v_{t_jet_center.strftime('%Y-%m-%d_%H-%M-%S')}.png"
 
-    plt.savefig(
-        fig_name,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.1,
-        transparent=True,
-        facecolor="w",
-        edgecolor="w",
-        orientation="landscape",
-    )
+        plt.savefig(
+            fig_name,
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0.1,
+            transparent=True,
+            facecolor="w",
+            edgecolor="w",
+            orientation="landscape",
+        )
 
     return (
         jet_detection,
@@ -1374,6 +1380,9 @@ def tplot_fnc(
             + f"{str(ind_crossing).zfill(5)}_{shear_val}s_"
         )
 
+    if save_pytplot:
+        spd.tplot(keys_to_plot, save_png=figname, display=False)
+
     if return_plotly_fig:
         from rxn_location.plotly_utils import convert_tplot_to_plotly
 
@@ -1400,5 +1409,4 @@ def tplot_fnc(
         fig.update_layout(title=f"Jet Detection for MMS{probe} {data_rate} data")
         return fig
     else:
-        spd.tplot(keys_to_plot, save_png=figname, display=False)
         return None

@@ -2,7 +2,7 @@
 
 from importlib import import_module
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 __all__ = ["rx_model", "get_sw_params", "jet_reversal_check", "plot_hist", "__version__"]
 

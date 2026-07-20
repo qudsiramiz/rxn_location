@@ -156,15 +156,15 @@ def plot_hist(
     def safe_cone_angle(df_n):
         """
         Safely calculates the solar wind cone angle from the IMF vector.
-        
+    
         The cone angle is defined as the angle between the Sun-Earth line (X-axis) 
         and the IMF vector. It safely handles invalid or zero magnetic field magnitudes.
-        
+    
         Parameters
         ----------
         df_n : pandas.DataFrame
             DataFrame containing the IMF components `b_imf_x`, `b_imf_y`, and `b_imf_z`.
-        
+    
         Returns
         -------
         float

@@ -24,7 +24,7 @@ from rxn_location.logger import set_verbosity, vprint
 def parse_args():
     """
     Parses command line arguments for the batch statistics script.
-    
+
     Returns
     -------
     argparse.Namespace
@@ -152,7 +152,7 @@ def parse_args():
 def main():
     """
     The main entry point for the batch statistics processing script.
-    
+
     This function loads the requested configurations, reads the input times list,
     loops through each target timestamp, runs the jet reversal checks and 
     reconnection models, and logs valid detections to the master jet list.
@@ -273,8 +273,10 @@ def main():
 
         for attempt_idx, attempt_time in enumerate(times_to_try):
             time_str_safe = attempt_time.strftime("%Y-%m-%d_%H%M%S")
+            jet_dir = os.path.join(args.outdir, "jet_reversal_checks", f"mms{args.probe}")
+            os.makedirs(jet_dir, exist_ok=True)
             jet_plot_filename = os.path.join(
-                args.outdir, f"jet_plot_{time_str_safe}.{args.format}"
+                jet_dir, f"jet_plot_{time_str_safe}.{args.format}"
             )
 
             try:

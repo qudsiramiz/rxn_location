@@ -935,14 +935,14 @@ def ridge_finder_multiple(
             # pass
         # plt.close()
     plt.close()
-    
+
     # Build dictionary of R_rc values to return
     dist_rc_dict = {}
     for i, dist_rc in enumerate(dist_rc_list):
         method_used = c_label[i] if c_label[i] else f"model_{i}"
         key_name = f"r_rc_{method_used}"
         dist_rc_dict[key_name] = np.round(dist_rc, 3) if not np.isnan(dist_rc) else np.nan
-        
+    
     return y_vals, x_intr_vals_list, y_intr_vals_list, dist_rc_dict
 
 
@@ -1767,7 +1767,7 @@ def target_fnc(r, r0, b_msh, line_fnc, line_intrp):
     """
     Objective function used to minimize the distance between the theoretical 
     X-line curve and the interpolated magnetic surface.
-    
+
     Parameters
     ----------
     r : float
@@ -1780,7 +1780,7 @@ def target_fnc(r, r0, b_msh, line_fnc, line_intrp):
         Function describing the theoretical X-line geometry.
     line_intrp : scipy.interpolate.interp1d
         Interpolation function of the evaluated magnetic surface.
-    
+
     Returns
     -------
     float
@@ -1858,11 +1858,11 @@ def ridge_finder_multiple_interactive(
     """
     Finds and extracts the continuous ridge (X-line) locations across multiple 
     reconnection models and prepares them for interactive Plotly 3D visualization.
-    
+
     This function evaluates the specified reconnection models over a 2D spatial grid
     (Y, Z) and extracts the coordinates of the maximal regions (ridges), representing
     the theoretical reconnection X-lines.
-    
+
     Parameters
     ----------
     image : list
@@ -1877,7 +1877,7 @@ def ridge_finder_multiple_interactive(
         Grid resolution.
     mms_sc_pos : list
         Spacecraft position vector [X, Y, Z].
-    
+
     Returns
     -------
     list

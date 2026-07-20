@@ -20,6 +20,7 @@ def generate_interactive_plots(
     selected_plots=None,
     x_var="b_imf_z",
     y_var="r_rc",
+    marker_size_var=None,
 ):
     """
     Generate interactive Plotly figures from a statistics CSV file.
@@ -171,7 +172,7 @@ def generate_interactive_plots(
                                 fig.add_trace(trace, row=row, col=col)
                         except Exception as e:
                             print(f"Skipping KDE for {name} due to error: {e}")
-                            
+            
                 fig.update_xaxes(
                     title_text=x_label if row == 2 else "",
                     row=row,
@@ -404,16 +405,22 @@ def generate_interactive_plots(
                 if len(df_n) > 0 and x_var in df_n.columns and y_var in df_n.columns:
                     # Filter out NaNs
                     df_clean = df_n.dropna(subset=[x_var, y_var]).copy()
+            
+                    scatter_kwargs = {
+                        "x": x_var,
+                        "y": y_var,
+                        "marginal_x": "histogram",
+                        "marginal_y": "histogram",
+                        "color_discrete_sequence": [color_list[i]],
+                        "title": name
+                    }
+                    if marker_size_var and marker_size_var != "None" and marker_size_var in df_clean.columns:
+                        scatter_kwargs["size"] = marker_size_var
+                        # Ensure sizes are positive and non-zero for Plotly
+                        df_clean[marker_size_var] = df_clean[marker_size_var].abs() + 0.1
+
                     if len(df_clean) > 0:
-                        fig = px.scatter(
-                            df_clean, 
-                            x=x_var, 
-                            y=y_var, 
-                            marginal_x="histogram", 
-                            marginal_y="histogram",
-                            color_discrete_sequence=[color_list[i]],
-                            title=name
-                        )
+                        fig = px.scatter(df_clean, **scatter_kwargs)
                         fig.update_layout(
                             template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
                             xaxis_title=x_label,

@@ -92,6 +92,13 @@ This tab is designed for batch processing and generating aggregated statistical 
 
 When you click **Run Statistics Mode**, the app will iterate forward in time. For every valid jet detection, it runs the Reconnection Models, gathers all physical parameters (like `r_rc`, MMS position, IMF data, and jet data), and appends them to your CSV file. **During the loop, you will see a live preview of the latest Jet Reversal plot.**
 
+#### Summary Statistics
+You can instantly compute and view summary statistics for your filtered dataset by checking the **Show Summary Statistics** box. This generates an interactive Markdown table featuring:
+- Data Count
+- **Mean ± Standard Deviation (Min, Max)** formatted via LaTeX
+- 10th, 50th (Median), and 90th Percentiles formatted via LaTeX
+This summary dynamically updates whenever you apply dataset filters from the sidebar.
+
 #### Generating Figures
 Once you have generated (or uploaded) a CSV file, you can generate aggregated plots:
 1. **Plot Engine:** Choose between `Plotly (Interactive)` and `Matplotlib (Static)`.

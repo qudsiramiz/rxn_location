@@ -40,6 +40,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install rxn-location
 ```
 
+#### Option 1b: Install from PyPi using poetry (Highly Recommended)
+[Poetry](https://python-poetry.org/) provides a great way to manage dependencies and is often better at installing packages with complex dependencies than pip.
+Assuming you have poetry installed, you can install the package by running the following command (in the folder of your choice):
+```bash
+poetry init --no-interaction
+poetry add rxn-location
+```
+
 #### Option 2: Install Directly from GitHub
 If you want the absolute latest development version without modifying the source code, you can install directly from the GitHub repository:
 ```bash
@@ -124,10 +132,6 @@ When run, the script will output its default configurations, process each time, 
 
 NOTE: Sometimes, the MMS data is not downloaded properly by PySPEDAS. In that case, please check your internet connection or use the GUI's Data Cache Dashboard to manage corrupted files.
 
-## Data
-All the data used to generate the figures in the paper are available in the ```data/study_data```
-directory.
-
 # Contact
 If you have any questions, please contact [Ramiz A. Qudsi](https://www.qudsiramiz.space/) at
-qudsiramiz@gmail.com
+[qudsiramiz@gmail.com](mailto:qudsiramiz@gmail.com).

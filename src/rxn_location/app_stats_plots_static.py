@@ -214,6 +214,6 @@ def generate_static_plots(
             figures["MMS Location Scatter Plot"] = fig
         except Exception as e:
             print(f"Static MMS Location Plot error: {e}")
-            
+        
     # Do NOT run plt.close("all") here otherwise the caller receives destroyed figures
     return figures, None

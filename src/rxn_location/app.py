@@ -32,7 +32,7 @@ from pathlib import Path
 # Try importing the required project modules
 try:
     from rxn_location.jet_reversal_check_function import jet_reversal_check
-    from rxn_location.rx_model_funcs import rx_model, ridge_finder_multiple_interactive
+    from rxn_location.rx_model_funcs import rx_model, ridge_finder_multiple_interactive, ridge_finder_multiple
     from rxn_location.app_stats_plots_interactive import generate_interactive_plots
     from rxn_location.app_stats_plots_static import generate_static_plots
     from rxn_location.app_seaborn_plots import generate_seaborn_jointplots
@@ -450,6 +450,31 @@ def main():
 
     set_verbosity(verbosity)
 
+    with st.sidebar.expander("Figure Saving Settings (Single Event Mode)", expanded=False):
+        save_pytplot = st.checkbox(
+            "Save Jet Reversal Figure (PyTplot)",
+            value=st.session_state.get("save_pytplot", True),
+        )
+        st.session_state["save_pytplot"] = save_pytplot
+        
+        save_delta_v = st.checkbox(
+            "Save Delta-V Figure (Matplotlib)",
+            value=st.session_state.get("save_delta_v", True),
+        )
+        st.session_state["save_delta_v"] = save_delta_v
+        
+        save_recon_interactive = st.checkbox(
+            "Save Reconnection Model (Interactive Plotly)",
+            value=st.session_state.get("save_recon_interactive", True),
+        )
+        st.session_state["save_recon_interactive"] = save_recon_interactive
+        
+        save_recon_static = st.checkbox(
+            "Save Reconnection Model (Static Matplotlib)",
+            value=st.session_state.get("save_recon_static", True),
+        )
+        st.session_state["save_recon_static"] = save_recon_static
+
     # --- Observation Parameters ---
     st.sidebar.header("Observation Parameters")
 
@@ -796,7 +821,7 @@ def main():
                 ["shear", "reconnection energy", "exhaust velocity", "bisection"],
                 default=_default_recon_models,
                 help=(
-                    "Physics models to calculate the probability of magnetic reconnection."
+                    "Physics models to calculate the location of magnetic reconnection X-line."
                     if show_hints
                     else None
                 ),
@@ -884,7 +909,7 @@ def main():
                 "limits": limits,
             }
 
-        def run_jet_check(c_time, skip_master_add=False):
+        def run_jet_check(c_time, skip_master_add=False, save_data=False):
             """
             Executes the jet reversal detection algorithm for a specific crossing time.
 
@@ -900,6 +925,9 @@ def main():
                 f"Running Jet Reversal Check for MMS{mms_probe} at {c_time.strftime('%H:%M:%S')}..."
             ):
                 try:
+                    save_pytplot = save_data and st.session_state.get("save_pytplot", True)
+                    save_delta_v = save_data and st.session_state.get("save_delta_v", True)
+
                     res = jet_reversal_check(
                         crossing_time=c_time,
                         dt=dt,
@@ -912,6 +940,8 @@ def main():
                         date_obs=c_time.strftime("%Y%m%d"),
                         return_plotly_fig=True,
                         dark_mode=is_dark_mode,
+                        save_pytplot=save_pytplot,
+                        save_delta_v=save_delta_v,
                     )
                     if res is None:
                         jet_error_placeholder.error(
@@ -945,6 +975,21 @@ def main():
                     if "sel_jet" in st.session_state:
                         del st.session_state["sel_jet"]
                     save_auto_session()
+
+                    # --- Save Jet Plot if requested ---
+                    if save_data and fig is not None:
+                        try:
+                            import os
+                            jet_dir = f"interactive_figures/jet_reversal_checks/mms{mms_probe}"
+                            os.makedirs(jet_dir, exist_ok=True)
+                            jet_plot_filename = os.path.join(
+                                jet_dir, f"jet_plot_{c_time.strftime('%Y-%m-%d_%H%M%S')}.html"
+                            )
+                            fig.write_html(jet_plot_filename)
+                            # Also save a png version for easy viewing
+                            fig.write_image(jet_plot_filename.replace(".html", ".png"))
+                        except Exception as e:
+                            st.warning(f"Could not save jet plot: {e}")
 
                     # --- Master List Integration (Features #1-#4) ---
                     sw_params = None
@@ -1108,6 +1153,9 @@ def main():
 
                     sw_params = res[8]
 
+                    save_recon_interactive = save_data and st.session_state.get("save_recon_interactive", True)
+                    save_recon_static = save_data and st.session_state.get("save_recon_static", True)
+
                     figure_inputs = {
                         "image": images,
                         "convolution_order": [1] * len(images),
@@ -1135,7 +1183,7 @@ def main():
                         ],
                         "draw_patch": [True] * len(images),
                         "draw_ridge": [True] * len(images),
-                        "save_fig": False,
+                        "save_fig": save_recon_interactive,
                         "fig_name": "rxn_app_figure",
                         "fig_format": "html",
                         "c_label": c_labels,
@@ -1148,7 +1196,7 @@ def main():
                         "tsy_model": tsy_model,
                         "dark_mode": is_dark_mode,
                         "b_grids": (res[0], res[1], res[2], res[12], res[13], res[14]),
-                        "save_rc_file": save_data,
+                        "save_rc_file": save_data and bool(csv_name),
                         "rc_file_name": csv_name,
                         "rc_folder": "./",
                         "df_jet_reversal": det,
@@ -1157,6 +1205,13 @@ def main():
                     rx_fig, dist_rc_dict = ridge_finder_multiple_interactive(
                         **figure_inputs
                     )
+                    
+                    if save_recon_static:
+                        static_inputs = figure_inputs.copy()
+                        static_inputs["save_fig"] = True
+                        static_inputs["fig_format"] = "png"
+                        static_inputs["save_rc_file"] = False  # Already handled by interactive call if needed
+                        _ = ridge_finder_multiple(**static_inputs)
 
                     # Record history
                     run_record = {
@@ -1185,6 +1240,36 @@ def main():
                     st.error(f"Error running Reconnection Models: {e}")
             return False, None, None
 
+        @st.dialog("Duplicate Jet Detected")
+        def duplicate_jet_dialog(c_time, nearby):
+            st.warning(
+                f"⚠️ **A jet is already present at {nearby.get('jet_time', 'unknown')}** "
+                f"(within 2 minutes of your input time "
+                f"{c_time.strftime('%Y-%m-%d %H:%M:%S')}). "
+                f"What would you like to do?"
+            )
+            col_a, col_b, col_c, col_d = st.columns(4)
+            if col_a.button("Generate Jet Reversal Plot Only", key="dup_jet_only"):
+                success, jet_det = run_jet_check(c_time, skip_master_add=True, save_data=True)
+                if success:
+                    if jet_det: st.toast("✅ Jet Reversal plot generated!", icon="✅")
+                    else: st.toast("❌ Jet Reversal check completed. No jet found.", icon="❌")
+                st.rerun()
+
+            if col_b.button("Generate Reconnection Model Only", key="dup_rxn_only"):
+                run_recon_models(c_time, save_data=True)
+                st.toast("✅ Reconnection Model generated!", icon="✅")
+                st.rerun()
+
+            if col_c.button("Generate Both", key="dup_both"):
+                s1, det = run_jet_check(c_time, skip_master_add=True, save_data=True)
+                s2, *_ = run_recon_models(c_time, save_data=True, det=det)
+                if s1 and s2: st.toast("✅ Both plots generated!", icon="✅")
+                st.rerun()
+
+            if col_d.button("Skip / Cancel", key="dup_skip"):
+                st.rerun()
+
     # =========================================================================
     # SIDEBAR ACTION BUTTONS
     # =========================================================================
@@ -1202,9 +1287,9 @@ def main():
             if c_time.tzinfo is None:
                 c_time = c_time.replace(tzinfo=pytz.utc)
 
-            s1, det = run_jet_check(c_time, skip_master_add=True)
+            s1, det = run_jet_check(c_time, skip_master_add=True, save_data=True)
             if s1:
-                s2, *_ = run_recon_models(c_time, det=det)
+                s2, *_ = run_recon_models(c_time, save_data=True, det=det)
                 if s2:
                     st.success(
                         f"Models successfully generated for jet at {entry.get('jet_time', 'N/A')}!"
@@ -1225,14 +1310,9 @@ def main():
                     st.session_state["master_jets"], crossing_time, window_minutes=2
                 )
                 if nearby is not None:
-                    st.session_state["duplicate_dialog_state"] = {
-                        "nearby_jet": nearby,
-                        "crossing_time": crossing_time,
-                        "action": "jet_check",
-                    }
-                    st.rerun()
+                    duplicate_jet_dialog(crossing_time, nearby)
                 else:
-                    success, jet_det = run_jet_check(crossing_time)
+                    success, jet_det = run_jet_check(crossing_time, save_data=True)
                     if success:
                         if jet_det:
                             st.toast(
@@ -1255,7 +1335,7 @@ def main():
                         minutes=t_delta
                     )
 
-                    success, jet_det = run_jet_check(current_test_time)
+                    success, jet_det = run_jet_check(current_test_time, save_data=True)
                     st.session_state.crossing_time_str = current_test_time.strftime(
                         "%Y-%m-%d %H:%M:%S"
                     )
@@ -1283,14 +1363,9 @@ def main():
                     st.session_state["master_jets"], crossing_time, window_minutes=2
                 )
                 if nearby is not None:
-                    st.session_state["duplicate_dialog_state"] = {
-                        "nearby_jet": nearby,
-                        "crossing_time": crossing_time,
-                        "action": "recon_models",
-                    }
-                    st.rerun()
+                    duplicate_jet_dialog(crossing_time, nearby)
                 else:
-                    success, _, _ = run_recon_models(crossing_time)
+                    success, _, _ = run_recon_models(crossing_time, save_data=True)
                     if success:
                         st.success("Reconnection Models generated!")
             else:
@@ -1303,15 +1378,10 @@ def main():
                     st.session_state["master_jets"], crossing_time, window_minutes=2
                 )
                 if nearby is not None:
-                    st.session_state["duplicate_dialog_state"] = {
-                        "nearby_jet": nearby,
-                        "crossing_time": crossing_time,
-                        "action": "run_all",
-                    }
-                    st.rerun()
+                    duplicate_jet_dialog(crossing_time, nearby)
                 else:
-                    s1, det = run_jet_check(crossing_time)
-                    s2, _, _ = run_recon_models(crossing_time, det=det)
+                    s1, det = run_jet_check(crossing_time, save_data=True)
+                    s2, _, _ = run_recon_models(crossing_time, save_data=True, det=det)
                     if s1 and s2:
                         st.success("All checks and models generated successfully!")
             else:
@@ -1426,7 +1496,7 @@ def main():
                                 unsafe_allow_html=True,
                             )
 
-                        s1, det = run_jet_check(curr_t)
+                        s1, det = run_jet_check(curr_t, save_data=True)
 
                         if len(st.session_state["history"]["jet_checks"]) > 0:
                             latest_jet_fig = st.session_state["history"]["jet_checks"][
@@ -1474,55 +1544,7 @@ def main():
             reset_session()
             st.rerun()
 
-    # =========================================================================
-    # DUPLICATE JET DIALOG (Feature #5)
-    # =========================================================================
 
-    # Handle duplicate dialog state — shown on the Controls tab as a prominent block
-    with tab_controls:
-        if st.session_state.get("duplicate_dialog_state") is not None:
-            dialog_state = st.session_state["duplicate_dialog_state"]
-            nearby = dialog_state["nearby_jet"]
-            c_time = dialog_state["crossing_time"]
-            action = dialog_state["action"]
-
-            st.warning(
-                f"⚠️ **A jet is already present at {nearby.get('jet_time', 'unknown')}** "
-                f"(within 2 minutes of your input time "
-                f"{c_time.strftime('%Y-%m-%d %H:%M:%S')}). "
-                f"What would you like to do?"
-            )
-
-            col_a, col_b, col_c, col_d = st.columns(4)
-            if col_a.button("Generate Jet Reversal Plot Only", key="dup_jet_only"):
-                st.session_state["duplicate_dialog_state"] = None
-                success, jet_det = run_jet_check(c_time, skip_master_add=True)
-                if success:
-                    if jet_det:
-                        st.toast("✅ Jet Reversal plot generated!", icon="✅")
-                    else:
-                        st.toast(
-                            "❌ Jet Reversal check completed. No jet found.", icon="❌"
-                        )
-                st.rerun()
-
-            if col_b.button("Generate Reconnection Model Only", key="dup_rxn_only"):
-                st.session_state["duplicate_dialog_state"] = None
-                run_recon_models(c_time)
-                st.toast("✅ Reconnection Model generated!", icon="✅")
-                st.rerun()
-
-            if col_c.button("Generate Both", key="dup_both"):
-                st.session_state["duplicate_dialog_state"] = None
-                s1, det = run_jet_check(c_time, skip_master_add=True)
-                s2 = run_recon_models(c_time, det=det)
-                if s1 and s2:
-                    st.toast("✅ Both plots generated!", icon="✅")
-                st.rerun()
-
-            if col_d.button("Skip / Cancel", key="dup_skip"):
-                st.session_state["duplicate_dialog_state"] = None
-                st.rerun()
 
     # =========================================================================
     # JET REVERSAL TAB
@@ -2027,10 +2049,10 @@ def main():
             load_only = col1.button(
                 "🔄 Load into Dashboard",
                 key="load_jet_to_dashboard",
-                use_container_width=True,
+                width="stretch",
             )
             load_and_run = col2.button(
-                "🚀 Load & Run Models", key="load_and_run_jet", use_container_width=True
+                "🚀 Load & Run Models", key="load_and_run_jet", width="stretch"
             )
 
             if load_only or load_and_run:
@@ -2252,82 +2274,61 @@ def main():
                     "filters will be included."
                 )
 
-                filter_col1, filter_col2, filter_col3 = st.columns(3)
-
-                # BZ filter
-                if "b_imf_z" in stats_df.columns:
-                    bz_min_val = float(stats_df["b_imf_z"].min())
-                    bz_max_val = float(stats_df["b_imf_z"].max())
-                    if bz_min_val < bz_max_val:
-                        bz_range = filter_col1.slider(
-                            "IMF Bz Range [nT]",
-                            min_value=bz_min_val,
-                            max_value=bz_max_val,
-                            value=(bz_min_val, bz_max_val),
-                            key="filter_bz",
-                        )
-                    else:
-                        bz_range = (bz_min_val, bz_max_val)
-                else:
-                    bz_range = None
-
-                # Dynamic pressure filter
-                if "p_dyn" in stats_df.columns:
-                    pdyn_min_val = float(stats_df["p_dyn"].min())
-                    pdyn_max_val = float(stats_df["p_dyn"].max())
-                    if pdyn_min_val < pdyn_max_val:
-                        pdyn_range = filter_col2.slider(
-                            "Dynamic Pressure Range [nPa]",
-                            min_value=pdyn_min_val,
-                            max_value=pdyn_max_val,
-                            value=(pdyn_min_val, pdyn_max_val),
-                            key="filter_pdyn",
-                        )
-                    else:
-                        pdyn_range = (pdyn_min_val, pdyn_max_val)
-                else:
-                    pdyn_range = None
-
-                # Shear angle filter
-                shear_col = None
-                for candidate in ["msh_msp_shear", "angle_b_lmn_vec_msp_msh_median"]:
-                    if candidate in stats_df.columns:
-                        shear_col = candidate
-                        break
-
-                if shear_col:
-                    shear_min_val = float(stats_df[shear_col].min())
-                    shear_max_val = float(stats_df[shear_col].max())
-                    if shear_min_val < shear_max_val:
-                        shear_range = filter_col3.slider(
-                            "Shear Angle Range [°]",
-                            min_value=shear_min_val,
-                            max_value=shear_max_val,
-                            value=(shear_min_val, shear_max_val),
-                            key="filter_shear",
-                        )
-                    else:
-                        shear_range = (shear_min_val, shear_max_val)
-                else:
-                    shear_range = None
-
-                # Apply filters
-                filtered_df = stats_df.copy()
-                if bz_range is not None and "b_imf_z" in filtered_df.columns:
-                    filtered_df = filtered_df[
-                        (filtered_df["b_imf_z"] >= bz_range[0])
-                        & (filtered_df["b_imf_z"] <= bz_range[1])
+                with st.expander("Dynamic Data Filters", expanded=True):
+                    desired_filters = [
+                        ("IMF Bx [nT]", ["sw_b_imf_gsm_x", "b_imf_x", "data_sw_b_imf_gsm_x"], "X-component of the Interplanetary Magnetic Field in GSM coordinates."),
+                        ("IMF By [nT]", ["sw_b_imf_gsm_y", "b_imf_y", "data_sw_b_imf_gsm_y"], "Y-component of the Interplanetary Magnetic Field in GSM coordinates."),
+                        ("IMF Bz [nT]", ["sw_b_imf_gsm_z", "b_imf_z", "data_sw_b_imf_gsm_z"], "Z-component of the Interplanetary Magnetic Field in GSM coordinates."),
+                        ("Cone Angle [°]", ["sw_cone_angle", "data_sw_cone_angle"], "Angle between the IMF vector and the Sun-Earth line."),
+                        ("Clock Angle [°]", ["sw_clock_angle", "data_sw_clock_angle"], "Azimuthal angle of the IMF vector in the Y-Z plane."),
+                        ("X GSM [RE]", ["x_gsm", "data_x_gsm"], "Spacecraft X-position in Geocentric Solar Magnetospheric (GSM) coordinates."),
+                        ("Y GSM [RE]", ["y_gsm", "data_y_gsm"], "Spacecraft Y-position in Geocentric Solar Magnetospheric (GSM) coordinates."),
+                        ("Z GSM [RE]", ["z_gsm", "data_z_gsm"], "Spacecraft Z-position in Geocentric Solar Magnetospheric (GSM) coordinates."),
+                        ("SYM-H [nT]", ["sw_sym_h", "data_sw_sym_h"], "Symmetric H-component index measuring ring current intensity (geomagnetic storms)."),
+                        ("Dynamic Pressure [nPa]", ["sw_p_dyn", "p_dyn", "data_sw_p_dyn"], "Solar wind dynamic pressure."),
+                        ("Shear Angle [°]", ["msh_msp_shear", "angle_b_lmn_vec_msp_msh_median", "data_msh_msp_shear"], "Magnetic shear angle between magnetosheath and magnetosphere."),
                     ]
-                if pdyn_range is not None and "p_dyn" in filtered_df.columns:
-                    filtered_df = filtered_df[
-                        (filtered_df["p_dyn"] >= pdyn_range[0])
-                        & (filtered_df["p_dyn"] <= pdyn_range[1])
-                    ]
-                if shear_range is not None and shear_col in filtered_df.columns:
-                    filtered_df = filtered_df[
-                        (filtered_df[shear_col] >= shear_range[0])
-                        & (filtered_df[shear_col] <= shear_range[1])
-                    ]
+
+                    if st.button("Reset All Filters", key="reset_dynamic_filters"):
+                        for label, candidates, desc in desired_filters:
+                            col_name = next((c for c in candidates if c in stats_df.columns), None)
+                            if col_name:
+                                min_val = float(stats_df[col_name].min())
+                                max_val = float(stats_df[col_name].max())
+                                if min_val < max_val:
+                                    st.session_state[f"filter_{col_name}"] = (min_val, max_val)
+
+                    # Clean up any duplicate columns generated by pandas (e.g. jet_time.1)
+                    duplicate_cols = [c for c in stats_df.columns if c.endswith('.1') or c.endswith('.2')]
+                    if duplicate_cols:
+                        stats_df = stats_df.drop(columns=duplicate_cols)
+
+                    # Filter the dataframe
+                    filtered_df = stats_df.copy()
+
+                    filter_cols = st.columns(3)
+                    col_idx = 0
+
+                    for label, candidates, desc in desired_filters:
+                        col_name = next((c for c in candidates if c in stats_df.columns), None)
+                        if col_name:
+                            min_val = float(stats_df[col_name].min())
+                            max_val = float(stats_df[col_name].max())
+                            if min_val < max_val:
+                                with filter_cols[col_idx % 3]:
+                                    f_range = st.slider(
+                                        label,
+                                        min_value=min_val,
+                                        max_value=max_val,
+                                        value=(min_val, max_val),
+                                        key=f"filter_{col_name}",
+                                        help=desc if show_hints else None,
+                                    )
+                                filtered_df = filtered_df[
+                                    (filtered_df[col_name] >= f_range[0]) & 
+                                    (filtered_df[col_name] <= f_range[1])
+                                ]
+                                col_idx += 1
 
                 st.caption(
                     f"Showing **{len(filtered_df)}** of **{len(stats_df)}** rows after filtering."
@@ -2402,7 +2403,7 @@ def main():
                     clean_col = col[5:] if col.startswith("data_") else col
                     if clean_col in base_var_options:
                         return base_var_options[clean_col]
-                    
+
                     if "_" in clean_col:
                         parts = clean_col.split("_", 1)
                         if len(parts) == 2:
@@ -2463,6 +2464,75 @@ def main():
                     if "sw_b_imf_gsm_z" in dropdown_vars
                     else ([dropdown_vars[1]] if len(dropdown_vars) > 1 else default_x)
                 )
+
+                st.markdown("### Summary Statistics")
+                if st.checkbox("Show Summary Statistics", value=False, key="show_summary_stats"):
+                    stats_vars = [
+                        "x_gsm", "y_gsm", "z_gsm",
+                        "r_spc", "r_rc",
+                        "sw_b_imf_gsm_x", "sw_b_imf_gsm_y", "sw_b_imf_gsm_z",
+                        "sw_np", "sw_tp", "sw_sym_h",
+                        "sw_clock_angle", "sw_p_dyn", "sw_cone_angle",
+                        "r_rc_Shear", "r_rc_Bisection Field", "r_rc_Reconnection Energy", "r_rc_Exhaust Velocity"
+                    ]
+
+                    summary_cols = []
+                    for v in stats_vars:
+                        if v in filtered_df.columns:
+                            summary_cols.append(v)
+                        elif f"data_{v}" in filtered_df.columns:
+                            summary_cols.append(f"data_{v}")
+
+                    if summary_cols:
+                        df_sum = filtered_df[summary_cols].describe(percentiles=[0.1, 0.5, 0.9])
+
+                        # Rename columns to human readable
+                        rename_dict = {}
+                        for c in summary_cols:
+                            clean_c = c[5:] if c.startswith("data_") else c
+                            rename_dict[c] = var_options.get(clean_c, clean_c)
+                        df_sum = df_sum.rename(columns=rename_dict)
+
+                        # Transpose so variables are rows
+                        df_sum = df_sum.T
+
+                        # Format the percentiles into a single string
+                        def format_percentiles(row):
+                            if pd.notnull(row['50%']):
+                                return f"$\\vphantom{{\\int}}_{{{row['10%']:.2f}}}^{{{row['90%']:.2f}}} {row['50%']:.2f}$"
+                            return ""
+
+                        df_sum["Percentiles (10, 50, 90)"] = df_sum.apply(format_percentiles, axis=1)
+
+                        # Format mean, std, min, max into a single string
+                        def format_mean_std_min_max(row):
+                            if pd.notnull(row['mean']):
+                                mean_std = f"{row['mean']:.2f}"
+                                if pd.notnull(row['std']):
+                                    mean_std += f" \\pm {row['std']:.2f}"
+
+                                min_val = f"{row['min']:.2f}" if pd.notnull(row['min']) else ""
+                                max_val = f"{row['max']:.2f}" if pd.notnull(row['max']) else ""
+
+                                if min_val and max_val:
+                                    return f"$\\vphantom{{\\int}}_{{{min_val}}}^{{{max_val}}} {mean_std}$"
+                                else:
+                                    return f"$\\vphantom{{\\int}} {mean_std}$"
+                            return ""
+
+                        df_sum["Mean $\\pm \\sigma$ (Min, Max)"] = df_sum.apply(format_mean_std_min_max, axis=1)
+
+                        # Format other columns to 2 decimal places to keep it clean
+                        cols_to_keep = ["count"]
+                        for c in cols_to_keep:
+                            df_sum[c] = df_sum[c].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
+
+                        # Keep only the relevant columns and reorder
+                        df_sum = df_sum[["count", "Mean $\\pm \\sigma$ (Min, Max)", "Percentiles (10, 50, 90)"]]
+
+                        st.markdown(df_sum.to_markdown())
+                    else:
+                        st.info("No numerical variables available for summary.")
 
                 st.markdown("### Figure Inputs")
                 fig_col1, fig_col2 = st.columns(2)
@@ -2566,16 +2636,108 @@ def main():
                         + y_vars
                         + ([marker_size_var] if marker_size_var != "None" else [])
                     )
+
+                    invalid_vars = []
                     for cv in custom_vars_to_add:
-                        if cv not in var_options:
-                            var_options[cv] = _format_var_name(cv)
                         if (
                             cv not in filtered_df.columns
                             and f"data_{cv}" not in filtered_df.columns
                         ):
-                            filtered_df[cv] = np.nan
+                            invalid_vars.append(cv)
 
-                    # Overwrite the temp CSV so the plot functions have access to the new NaN custom variables
+                    if invalid_vars:
+                        st.error(f"The following custom variables are not available in the dataset: **{', '.join(invalid_vars)}**")
+                        with st.expander("Click here to see the complete list of available variables"):
+                            categories = {
+                                "Solar Wind & IMF": [],
+                                "Reconnection & Models": [],
+                                "Jet Data": [],
+                                "MMS Spacecraft Data": [],
+                                "Misc": []
+                            }
+                            
+                            for col in sorted(filtered_df.columns):
+                                lower_col = col.lower()
+                                if any(x in lower_col for x in ["sw_", "imf", "cone", "clock", "sym_h", "p_dyn"]):
+                                    categories["Solar Wind & IMF"].append(col)
+                                elif any(x in lower_col for x in ["r_rc", "shear", "model", "angle"]):
+                                    categories["Reconnection & Models"].append(col)
+                                elif any(x in lower_col for x in ["jet", "time", "duration", "count"]):
+                                    categories["Jet Data"].append(col)
+                                elif any(x in lower_col for x in ["gsm", "spc", "n_p", "v_ion", "n_e", "t_para", "t_perp", "mms"]):
+                                    categories["MMS Spacecraft Data"].append(col)
+                                else:
+                                    categories["Misc"].append(col)
+                                    
+                            def get_var_hint(var_name):
+                                lower_col = var_name.lower()
+                                if "cone_angle" in lower_col: return "Angle between IMF and Sun-Earth line"
+                                if "clock_angle" in lower_col: return "IMF azimuthal angle in Y-Z plane"
+                                if "sym_h" in lower_col: return "Geomagnetic storm index"
+                                if "p_dyn" in lower_col: return "Dynamic pressure"
+                                if "sw_b_imf_gsm_x" in lower_col: return "X-component of the Interplanetary Magnetic Field in GSM coordinates."
+                                if "sw_b_imf_gsm_y" in lower_col: return "Y-component of the Interplanetary Magnetic Field in GSM coordinates."
+                                if "sw_b_imf_gsm_z" in lower_col: return "Z-component of the Interplanetary Magnetic Field in GSM coordinates."
+                                if "sw_np" in lower_col: return "Number density of solar wind protons."
+                                if "sw_tp" in lower_col: return "Temperature of solar wind protons."
+                                if "sw_v_imf_gse_x" in lower_col: return "X-component of the solar wind velocity in GSE coordinates."
+                                if "sw_v_imf_gse_y" in lower_col: return "Y-component of the solar wind velocity in GSE coordinates."
+                                if "sw_v_imf_gse_z" in lower_col: return "Z-component of the solar wind velocity in GSE coordinates."
+                                if lower_col.startswith("sw_"): return "Solar Wind parameter"
+                                if "imf" in lower_col: return "Interplanetary Magnetic Field parameter"
+                                if "r_rc" in lower_col: return "Reconnection distance metric for the respective model"
+                                if "shear" in lower_col or "angle" in lower_col: return "Magnetic shear angle"
+                                if "model" in lower_col: return "Reconnection model prediction"
+                                if "jet_time" in lower_col: return "Time of jet center crossing"
+                                if "crossing_time" in lower_col: return "Time of magnetopause crossing"
+                                if "duration" in lower_col: return "Duration of jet"
+                                if "gsm" in lower_col: return "GSM coordinate position"
+                                if "spc" in lower_col: return "Spacecraft position"
+                                if "n_p" in lower_col or "np_" in lower_col: return "Proton number density"
+                                if "v_ion" in lower_col or "vp_" in lower_col: return "Ion bulk velocity"
+                                if "n_e" in lower_col: return "Electron number density"
+                                if "t_para" in lower_col: return "Parallel temperature"
+                                if "t_perp" in lower_col: return "Perpendicular temperature"
+                                if "b_lmn" in lower_col: return "Magnetic field in LMN coordinates"
+                                if "beta" in lower_col: return "Plasma beta (ratio of thermal to magnetic pressure)"
+                                if "mms" in lower_col or "probe" in lower_col: return "MMS spacecraft identifier"
+                                if "added_at" in lower_col: return "Timestamp when event was added to the list"
+                                if "dt" == lower_col: return "Time step / integration time used"
+                                if "jet_len" in lower_col: return "Minimum number of data points for a valid jet"
+                                if "rate" == lower_col: return "MMS data rate (e.g. brst, fast)"
+                                if "level" == lower_col: return "Data processing level (e.g. l2)"
+                                if "coord_type" in lower_col: return "Coordinate system used"
+                                if "time_clip" in lower_col: return "Time clipping status"
+                                if "t_delta" in lower_col: return "Time shift interval (minutes) for jet search"
+                                if "max_attempts" in lower_col: return "Max retries for jet detection search"
+                                if "tsy_model" in lower_col: return "Tsyganenko magnetic field model used"
+                                if "recon_models" in lower_col: return "Whether reconnection models were executed"
+                                if "omni_level" in lower_col: return "OMNI data resolution level"
+                                if "m_p" == lower_col: return "Magnetopause standoff distance scaling factor"
+                                if "dr" == lower_col: return "Spatial resolution for 3D model grid"
+                                if "limits" in lower_col: return "X, Y, Z boundaries for 3D grid"
+                                if "date" == lower_col: return "Date of the event"
+                                if "jet_detection" in lower_col: return "Jet detection flag (1=detected)"
+                                if "ind_" in lower_col: return "Data array index for specific interval"
+                                if "method_used" in lower_col: return "Method used for analysis"
+                                return "Data variable"
+
+                            for cat, cols in categories.items():
+                                if cols:
+                                    st.markdown(f"**{cat}**")
+                                    n_cols = 2 if show_hints else 4
+                                    grid_cols = st.columns(n_cols)
+                                    for i, col_name in enumerate(cols):
+                                        hint = f"<br/><span style='color:gray; font-size: 0.85em'>*{get_var_hint(col_name)}*</span>" if show_hints else ""
+                                        grid_cols[i % n_cols].markdown(f"`{col_name}`{hint}", unsafe_allow_html=True)
+                                    st.write("")
+                        return
+
+                    for cv in custom_vars_to_add:
+                        if cv not in var_options:
+                            var_options[cv] = _format_var_name(cv)
+
+                    # Overwrite the temp CSV so the plot functions have access to the new custom variables
                     filtered_df.to_csv(filtered_csv_path, index=False)
 
                     with st.spinner("Generating statistical figures..."):
@@ -2588,12 +2750,12 @@ def main():
                         else:
                             is_interactive = "Interactive" in plot_engine
                             plot_is_dark = "Dark" in plot_theme
-                            
+
                             for x_var, y_var in zip(x_vars, y_vars):
                                 st.markdown(
                                     f"#### {var_options.get(x_var, x_var)} vs {var_options.get(y_var, y_var)}"
                                 )
-                                
+
                                 if is_interactive:
                                     # Use Plotly
                                     plotly_figs, err = generate_interactive_plots(
@@ -2602,6 +2764,7 @@ def main():
                                         selected_plots=plots_to_gen,
                                         x_var=x_var,
                                         y_var=y_var,
+                                        marker_size_var=custom_marker if custom_marker else marker_size_var_sel,
                                     )
                                     if err:
                                         st.error(err)
@@ -2612,9 +2775,9 @@ def main():
                                                 j_cols = st.columns(2)
                                                 for j_idx, j_fig in enumerate(fig):
                                                     if j_fig:
-                                                        j_cols[j_idx % 2].plotly_chart(j_fig, use_container_width=True, theme=None)
+                                                        j_cols[j_idx % 2].plotly_chart(j_fig, width="stretch", theme=None, key=f"plotly_joint_{x_var}_{y_var}_{j_idx}")
                                             else:
-                                                st.plotly_chart(fig, use_container_width=True, theme=None)
+                                                st.plotly_chart(fig, width="stretch", theme=None, key=f"plotly_{title}_{x_var}_{y_var}")
                                 else:
                                     # Use Matplotlib / Seaborn (Static)
                                     static_figs, err = generate_static_plots(
@@ -2629,7 +2792,7 @@ def main():
                                     else:
                                         for title, fig in static_figs.items():
                                             st.pyplot(fig, transparent=False, facecolor="black" if plot_is_dark else "white")
-                                            
+
                                     # Static Seaborn Joint Plot is handled specially because it requires extra parameters
                                     if "Seaborn Joint-Plots" in plots_to_gen:
                                         try:

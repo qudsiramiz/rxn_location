@@ -49,6 +49,3 @@ my_batch_reconnection_stats.csv
 
 # 6. Optional Flags (do not put a value on the next line for flags, just the flag itself)
 --plot-seaborn
-# --no_plot_orig_xline
-# --no_plot_bisec_xline
-# --no_plot_ivp_xline

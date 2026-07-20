@@ -92,6 +92,4 @@ rxn-batch --help
 | `--max_retries` | Maximum number of time-shifted retries when initial jet check fails. | `5` |
 | `--plot-seaborn` | Generate final statistical Seaborn joint-plots from the Master List after the batch run finishes. | Disabled |
 | `--plot_engine` | Engine used to plot the jet reversal check (`plotly` or `matplotlib`). | `plotly` |
-| `--no_plot_orig_xline` | Disable plotting the original convolution X-line. | False |
-| `--no_plot_bisec_xline`| Disable plotting the Bisection X-line. | False |
-| `--no_plot_ivp_xline`  | Disable plotting the IVP X-line. | False |
+

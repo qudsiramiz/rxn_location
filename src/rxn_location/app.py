@@ -28,6 +28,7 @@ import pickle
 import os
 import logging
 from pathlib import Path
+from PIL import Image
 
 # Try importing the required project modules
 try:
@@ -43,10 +44,11 @@ except ImportError as e:
         f"Error importing rxn_location modules. Ensure the package is installed properly.\n{e}"
     )
 
-# Page config
+# Icon for the app and page config
+icon_path = Path(__file__).parent / "../../docs/assets" / "icon.png"
 st.set_page_config(
     page_title="RXN Location Dash",
-    page_icon="🌍",
+    page_icon=icon_path if icon_path.exists() else "🌍",
     layout="wide",
     initial_sidebar_state="expanded",
 )

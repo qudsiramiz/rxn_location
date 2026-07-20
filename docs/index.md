@@ -1,7 +1,7 @@
-# Reconnection line location (`rxn_location`)
+# Reconnection X-line location (`rxn_location`)
 
 ## Introduction
-`rxn_location` is a Python package for predicting and analyzing the X-line location at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
+`rxn_location` is a Python package for computing the model predicted X-line location and analyzing them at the dayside terrestrial magnetopause. It provides tools to analyze individual reconnection jets via an interactive GUI, as well as CLI tools for automated, large-scale statistical batch processing.
 
 The package predicts the X-line location based on four primary models:
 
@@ -16,7 +16,7 @@ The repository is archived using Zenodo with the following DOI:
 [![DOI](https://zenodo.org/badge/669151405.svg)](https://zenodo.org/badge/latestdoi/669151405)
 
 ## Description
-This package originally started as the repository for generating the figures in the paper ["Statistical comparison of various dayside magnetopause reconnection X-line prediction models"](https://doi.org/10.1029/2023JA031644) (by Ramiz A. Qudsi, Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland). It has since evolved into a software tool suite for both individual jet event analysis and aggregated statistical modeling.
+This package originally started as the repository for generating the figures in the paper ["Statistical comparison of various dayside magnetopause reconnection X-line prediction models"](https://doi.org/10.1029/2023JA031644) (by Ramiz A. Qudsi, Brian Walsh, Jeff Broll, Emil Atz, Stein Haaland). It has since evolved into a software tool suite for both individual jet event analysis and aggregated statistical analysis.
 
 ## Code
 The code is written for Python 3.11 or later. All dependencies are managed automatically via `pyproject.toml` and will be installed when you install the package.
@@ -42,7 +42,7 @@ pip install rxn-location
 
 #### Option 1b: Install from PyPi using poetry (Highly Recommended)
 [Poetry](https://python-poetry.org/) provides a great way to manage dependencies and is often better at installing packages with complex dependencies than pip.
-Assuming you have poetry installed, you can install the package by running the following command (in the folder of your choice):
+Assuming you have poetry installed, you can install the package by running the following command (in a folder of your choice):
 ```bash
 poetry init --no-interaction
 poetry add rxn-location
@@ -84,14 +84,14 @@ poetry shell
 
 ### Interactive GUI
 
-The easiest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize 3D reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
+The simplest way to use `rxn_location` is via the interactive Streamlit graphical user interface. This interface allows you to run Jet Reversal checks, visualize reconnection models, run automated statistical batch modes, and generate statistical plots dynamically.
 
 **Recent GUI Features include:**
 
 - **Master Jet List**: Persistent JSON storage of detected jets with automatic 2-minute deduplication across sessions. Now automatically fetches and saves contextual Solar Wind parameters (B_IMF, V_IMF, Np, Tp, Sym-H, Clock Angle, P_dyn).
 - **Interactive Data Table**: View, sort, manually prune, and export (CSV/JSON/Pickle) your master jet list. Features high-quality Unicode formatting for variables.
 - **Duplicate Jet Dialog**: Safety checks when generating models to prevent processing the same jet multiple times.
-- **Parameter Presets**: Save and load your favorite sidebar configurations.
+- **Parameter Presets**: Save and load your sidebar configurations.
 - **Data Cache Dashboard**: Monitor and clean up the local PySPEDAS data cache directly from the sidebar.
 - **Dynamic Plot Filtering**: Filter statistics by IMF Bz, dynamic pressure, and shear angle before plotting.
 - **Advanced Plotting Engines**: Toggle between `Plotly (Interactive)` and `Matplotlib (Static)` engines dynamically when generating statistical plots.

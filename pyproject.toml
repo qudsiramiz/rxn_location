@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rxn_location"
-version = "0.3.0"
+version = "0.3.1"
 description = "Statistical comparison between X-line location predicted by various models for dayside terrestrial magnetopause"
 authors = ["Ramiz Qudsi <qudsiramiz@gmail.com>"]
 license = "GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"

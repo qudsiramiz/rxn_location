@@ -8,6 +8,8 @@ theme:
     - navigation.tabs
     - navigation.sections
     - toc.integrate
+    - content.code.copy
+
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
@@ -26,6 +28,9 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  logo: assets/icon.png
+  favicon: assets/icon.png
+
 
 plugins:
   - search
@@ -44,3 +49,8 @@ nav:
   - GUI Usage Guide: gui_usage.md
   - CLI Usage Guide: cli_usage.md
   - API Reference: api.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences

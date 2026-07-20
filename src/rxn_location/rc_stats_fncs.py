@@ -51,6 +51,10 @@ def convert_wide_to_long(df):
             if not col.startswith("r_rc_") and col != "r_rc" and col != "method_used"
         ]
 
+        # Drop 'r_rc' if it already exists, as melt will create it and crash otherwise
+        if "r_rc" in df.columns:
+            df = df.drop(columns=["r_rc"])
+
         # Melt it
         df_long = pd.melt(
             df,

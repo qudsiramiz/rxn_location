@@ -27,7 +27,6 @@ The sidebar contains global controls that apply across all tabs:
 
 | Parameter | Description | Typical Range | Default |
 | :--- | :--- | :--- | :--- |
-| **Dark Mode** | Toggle between dark mode and light mode plots. | N/A | Dark |
 | **Crossing Time** | The UTC timestamp to center the analysis around. | Valid MMS operational dates | `2015-09-02 16:45:00` |
 | **MMS Probe** | Selects which of the 4 MMS spacecraft to source telemetry from. | `1` to `4` | `3` |
 | **Data Rate** | The telemetry data rate from MMS instruments. | `brst` (burst), `fast`, `srvy` (survey) | `brst` |
@@ -95,6 +94,9 @@ When you click **Run Statistics Mode**, the app will iterate forward in time. Fo
 
 #### Generating Figures
 Once you have generated (or uploaded) a CSV file, you can generate aggregated plots:
-1. **Plots to Generate:** Choose from *Histograms*, *KDE Plots*, *2D Histograms*, *Scatter Plots*, or the *MMS Location Scatter Plot*.
-2. **Dynamic Variables:** If you select KDE, Scatter, or 2D Histograms, use dropdown menus to choose precisely which variables you want to plot on the X and Y axes (e.g., IMF Bz vs Reconnection Distance).
-3. Click **Generate Selected Figures** to view your publication-ready plots!
+1. **Plot Engine:** Choose between `Plotly (Interactive)` and `Matplotlib (Static)`.
+2. **Plots to Generate:**
+    - For Plotly: Choose from *Scatter Plots*, *MMS Location Scatter Plot*, *KDE Plots*, *2D Histograms*.
+    - For Matplotlib: Choose from *Scatter Plots*, *MMS Location Scatter Plot*, *KDE Plots*, *2D Histograms*.
+3. **Dynamic Variables:** Use dropdown menus to choose precisely which variables you want to plot on the X and Y axes (e.g., IMF Bz vs Reconnection Distance).
+4. Click **Generate Selected Figures** to view your plots!

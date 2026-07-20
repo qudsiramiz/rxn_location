@@ -1380,13 +1380,22 @@ def tplot_fnc(
         fig = convert_tplot_to_plotly(keys_to_plot, dark_mode=dark_mode)
 
         # Add timebars using go.Scatter vertical lines
-        for unix_t, color in [
-            (msp_time_unix, "red"),
-            (msh_time_unix, "blue"),
-            (t_jet_center_unix, "green"),
+        for unix_t, color, label in [
+            (msp_time_unix, "red", "Magnetopause"),
+            (t_jet_center_unix, "green", "Jet Center"),
+            (msh_time_unix, "blue", "Magnetosheath"),
         ]:
             t_dt = datetime.datetime.fromtimestamp(unix_t, datetime.timezone.utc)
-            fig.add_vline(x=t_dt, line_dash="dash", line_color=color, line_width=2)
+            fig.add_vline(
+                x=t_dt, 
+                line_dash="dash", 
+                line_color=color, 
+                line_width=2,
+                annotation_text=label,
+                annotation_position="top right",
+                annotation_font_size=12,
+                annotation_font_color=color
+            )
 
         fig.update_layout(title=f"Jet Detection for MMS{probe} {data_rate} data")
         return fig

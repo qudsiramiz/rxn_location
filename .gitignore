@@ -153,3 +153,5 @@ figures_batch/*
 # Poetry
 poetry.lock
 
+.temp_master_list_stats.csv
+.temp_filtered_stats.csv

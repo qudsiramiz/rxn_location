@@ -34,6 +34,7 @@ try:
     from rxn_location.jet_reversal_check_function import jet_reversal_check
     from rxn_location.rx_model_funcs import rx_model, ridge_finder_multiple_interactive
     from rxn_location.app_stats_plots_interactive import generate_interactive_plots
+    from rxn_location.app_stats_plots_static import generate_static_plots
     from rxn_location.app_seaborn_plots import generate_seaborn_jointplots
     from rxn_location import master_jet_list as mjl
     from rxn_location import presets as preset_mgr
@@ -59,8 +60,8 @@ AUTO_SAVE_PATH = Path(os.path.expanduser("~")) / ".rxn_location_auto_save.pkl"
 def save_auto_session():
     """
     Saves the current application state to a local session file.
-    
-    This ensures that user inputs, such as active time, selected probe, and 
+
+    This ensures that user inputs, such as active time, selected probe, and
     data rates are preserved across page reloads.
     """
     state_to_save = {
@@ -81,7 +82,7 @@ def save_auto_session():
 
 def load_auto_session():
     """
-    Loads a previously saved application state from a local session file 
+    Loads a previously saved application state from a local session file
     into the current Streamlit session.
     """
     if AUTO_SAVE_PATH.exists():
@@ -426,25 +427,7 @@ def main():
     # --- Global Settings ---
     st.sidebar.header("Global Settings")
 
-    if st.session_state.dark_mode:
-        button_icon = "☀️ Light Mode"
-    else:
-        button_icon = "🌙 Dark Mode"
-
-    if st.sidebar.button(button_icon):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        template = "plotly_dark" if st.session_state.dark_mode else "plotly_white"
-        # Update all historical figures to match theme
-        for run in st.session_state["history"]["jet_checks"]:
-            if run.get("fig"):
-                run["fig"].update_layout(template=template)
-        for run in st.session_state["history"]["recon_models"]:
-            if run.get("fig"):
-                run["fig"].update_layout(template=template)
-        save_auto_session()
-        st.rerun()
-
-    is_dark_mode = st.session_state.dark_mode
+    is_dark_mode = True
 
     show_hints = st.sidebar.checkbox(
         "Show Parameter Hints",
@@ -609,21 +592,33 @@ def main():
     # TABS
     # =========================================================================
 
-    if use_stats_mode:
-        tab_controls, tab_jet, tab_rxn, tab_master, tab_stats = st.tabs(
-            [
-                "Controls",
-                "Jet Reversal Plot",
-                "Reconnection Models",
-                "Master Jet List",
-                "Statistics Results",
-            ]
-        )
-    else:
-        tab_controls, tab_jet, tab_rxn, tab_master = st.tabs(
-            ["Controls", "Jet Reversal Plot", "Reconnection Models", "Master Jet List"]
-        )
-        tab_stats = None
+    # Inject CSS for Tabs to increase font size and make active tab obvious
+    st.markdown(
+        """
+        <style>
+        button[data-baseweb="tab"] {
+            font-size: 18px !important;
+            font-weight: 600;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #3498db !important;
+            border-bottom: 3px solid #3498db !important;
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    tab_controls, tab_jet, tab_rxn, tab_master, tab_stats = st.tabs(
+        [
+            "Controls",
+            "Jet Reversal Plot",
+            "Reconnection Models",
+            "Master Jet List",
+            "Statistics Results",
+        ]
+    )
 
     with tab_jet:
         live_jet_plot_placeholder = st.empty()
@@ -807,8 +802,6 @@ def main():
                 ),
             )
             st.session_state["preset_recon_models"] = recon_models
-            st.markdown("##### Plotting Options")
-            # Removed the checkbox layout since there's only one model now
 
             _omni_options = ["hro_1min", "hro_5min"]
             _default_omni = st.session_state.get("preset_omni_level", "hro_1min")
@@ -1559,7 +1552,7 @@ def main():
             if curr_idx >= len(jet_hist):
                 curr_idx = len(jet_hist) - 1
 
-            col_sel, col_prev, col_next = st.columns([6, 2, 2])
+            col_sel, col_prev, col_next = st.columns([6, 2, 2], vertical_alignment="bottom")
             selected_option = col_sel.selectbox(
                 "Browse Run History", options, index=curr_idx
             )
@@ -1613,7 +1606,7 @@ def main():
             if curr_idx >= len(rxn_hist):
                 curr_idx = len(rxn_hist) - 1
 
-            col_sel, col_prev, col_next = st.columns([6, 2, 2])
+            col_sel, col_prev, col_next = st.columns([6, 2, 2], vertical_alignment="bottom")
             selected_option = col_sel.selectbox(
                 "Browse Run History", options, index=curr_idx, key="sel_rxn"
             )
@@ -1870,18 +1863,14 @@ def main():
                     "Plasma Vel [km/s] (GSE)": sw_vel,
                     "Clock Angle [deg]": clock_angle,
                     "Cone Angle [deg]": cone_angle,
-                    "Shear [Re]": fmt_val(
-                        entry.get("data_r_rc_Shear")
-                    ),
+                    "Shear [Re]": fmt_val(entry.get("data_r_rc_Shear")),
                     "Recon. Eng [Re]": fmt_val(
                         entry.get("data_r_rc_Reconnection Energy")
                     ),
                     "Exhaust Vel. [Re]": fmt_val(
                         entry.get("data_r_rc_Exhaust Velocity")
                     ),
-                    "Bisec Field [Re]": fmt_val(
-                        entry.get("data_r_rc_Bisection Field")
-                    ),
+                    "Bisec Field [Re]": fmt_val(entry.get("data_r_rc_Bisection Field")),
                     "Model Parameters": mod_params,
                     "_original_index": i,
                 }
@@ -2238,7 +2227,7 @@ def main():
                     )
                     if result_df is not None and len(result_df) > 0:
                         # Save to a temp CSV for the plotting functions
-                        temp_ml_csv = "temp_master_list_stats.csv"
+                        temp_ml_csv = ".temp_master_list_stats.csv"
                         result_df.to_csv(temp_ml_csv, index=False)
                         csv_path = temp_ml_csv
                         stats_df = pd.read_csv(csv_path, index_col=False)
@@ -2345,7 +2334,7 @@ def main():
                 )
 
                 # Write filtered data to a temp CSV for the plotting functions
-                filtered_csv_path = "temp_filtered_stats.csv"
+                filtered_csv_path = ".temp_filtered_stats.csv"
                 filtered_df.to_csv(filtered_csv_path, index=False)
 
                 st.success(f"Using statistics data from: {csv_path}")
@@ -2407,80 +2396,188 @@ def main():
                 var_options = {}
                 import numpy as np
 
+                def _format_var_name(col):
+                    if col in base_var_options:
+                        return base_var_options[col]
+                    clean_col = col[5:] if col.startswith("data_") else col
+                    if clean_col in base_var_options:
+                        return base_var_options[clean_col]
+                    
+                    if "_" in clean_col:
+                        parts = clean_col.split("_", 1)
+                        if len(parts) == 2:
+                            sub_part = parts[1].replace("_", r"\_")
+                            return rf"${parts[0]}_{{{sub_part}}}$"
+                    return clean_col.replace("_", " ").title()
+
                 numeric_cols = stats_df.select_dtypes(include=[np.number]).columns
                 for col in numeric_cols:
                     if col == "method_used" or col.startswith("Unnamed"):
                         continue
                     if stats_df[col].isna().all():
                         continue
-                    var_options[col] = base_var_options.get(
-                        col, col.replace("_", " ").title()
-                    )
+                    var_options[col] = _format_var_name(col)
 
-                for model_col in ["r_rc_Shear", "r_rc_Bisection Field", "r_rc_Reconnection Energy", "r_rc_Exhaust Velocity"]:
-                    if model_col in stats_df.columns or f"data_{model_col}" in stats_df.columns:
+                for model_col in [
+                    "r_rc_Shear",
+                    "r_rc_Bisection Field",
+                    "r_rc_Reconnection Energy",
+                    "r_rc_Exhaust Velocity",
+                ]:
+                    if (
+                        model_col in stats_df.columns
+                        or f"data_{model_col}" in stats_df.columns
+                    ):
                         var_options["r_rc"] = base_var_options.get(
                             "r_rc", "Reconnection Distance [$R_E$]"
                         )
                         break
 
                 available_vars = list(var_options.keys())
+
+                allowed_keys = [
+                    "x_gsm",
+                    "y_gsm",
+                    "z_gsm",
+                    "r_spc",
+                    "r_rc",
+                    "sw_b_imf_gsm_x",
+                    "sw_b_imf_gsm_y",
+                    "sw_b_imf_gsm_z",
+                    "sw_np",
+                    "sw_tp",
+                    "sw_sym_h",
+                    "sw_clock_angle",
+                    "sw_p_dyn",
+                    "sw_cone_angle",
+                ]
+                dropdown_vars = [v for v in allowed_keys if v in available_vars]
+
                 default_x = (
-                    ["b_imf_z"]
-                    if "b_imf_z" in available_vars
-                    else ([available_vars[0]] if available_vars else [])
+                    ["r_rc"]
+                    if "r_rc" in dropdown_vars
+                    else ([dropdown_vars[0]] if dropdown_vars else [])
                 )
                 default_y = (
-                    ["b_imf_y"]
-                    if "b_imf_y" in available_vars
-                    else ([available_vars[1]] if len(available_vars) > 1 else default_x)
+                    ["sw_b_imf_gsm_z"]
+                    if "sw_b_imf_gsm_z" in dropdown_vars
+                    else ([dropdown_vars[1]] if len(dropdown_vars) > 1 else default_x)
                 )
 
-                plots_to_gen = st.multiselect(
-                    "Select Figures to Generate",
-                    [
-                        "Histograms",
-                        "KDE Plots",
-                        "2D Histograms",
-                        "Scatter Plots",
-                        "MMS Location Scatter Plot",
-                        "Seaborn Joint-Plots",
-                    ],
-                    default=["Seaborn Joint-Plots"],
-                )
+                st.markdown("### Figure Inputs")
+                fig_col1, fig_col2 = st.columns(2)
 
-                # Extra option for seaborn plots
-                marker_size_var = "None"
-                if "Seaborn Joint-Plots" in plots_to_gen:
-                    marker_options = ["None"] + available_vars
-                    default_marker = "r_rc" if "r_rc" in available_vars else "None"
-                    marker_size_var = st.selectbox(
-                        "Variable for Marker Size (Z-parameter)",
-                        marker_options,
-                        format_func=lambda x: (
-                            var_options.get(x, x)
-                            if x != "None"
-                            else "Constant (No Scaling)"
-                        ),
-                        index=marker_options.index(default_marker),
+                with fig_col1:
+                    plot_engine = st.radio(
+                        "Plot Engine",
+                        ["Interactive (Plotly)", "Static (Matplotlib/Seaborn)"],
+                        horizontal=True
+                    )
+                    plot_theme = st.radio(
+                        "Plot Theme",
+                        ["Dark Mode", "Light Mode"],
+                        horizontal=True,
+                        index=0 if is_dark_mode else 1
+                    )
+                    plots_to_gen = st.multiselect(
+                        "Select Figures to Generate",
+                        [
+                            "Histograms",
+                            "KDE Plots",
+                            "2D Histograms",
+                            "Scatter Plots",
+                            "MMS Location Scatter Plot",
+                            "Seaborn Joint-Plots",
+                        ],
+                        default=["Seaborn Joint-Plots"],
                     )
 
-                x_vars = st.multiselect(
-                    "X-Axis Variable(s)",
-                    available_vars,
-                    format_func=lambda x: var_options[x],
-                    default=default_x,
-                    key="stats_x_vars_v2",
-                )
-                y_vars = st.multiselect(
-                    "Y-Axis Variable(s)",
-                    available_vars,
-                    format_func=lambda x: var_options[x],
-                    default=default_y,
-                    key="stats_y_vars_v2",
-                )
+                # Extra option for seaborn plots
+                marker_size_var_sel = "None"
+                custom_marker = ""
+                with fig_col2:
+                    if "Seaborn Joint-Plots" in plots_to_gen:
+                        marker_options = ["None"] + dropdown_vars
+                        default_marker = "r_rc" if "r_rc" in dropdown_vars else "None"
+                        marker_size_var_sel = st.selectbox(
+                            "Variable for Marker Size (Z-parameter)",
+                            marker_options,
+                            format_func=lambda x: (
+                                var_options.get(x, x)
+                                if x != "None"
+                                else "Constant (No Scaling)"
+                            ),
+                            index=marker_options.index(default_marker),
+                        )
+                        custom_marker = st.text_input(
+                            "Custom Marker Size Variable (overrides dropdown if set)",
+                            "",
+                        )
+
+                axis_col1, axis_col2 = st.columns(2)
+
+                with axis_col1:
+                    x_vars_sel = st.multiselect(
+                        "X-Axis Variable(s)",
+                        dropdown_vars,
+                        format_func=lambda x: var_options[x],
+                        default=default_x,
+                        key="stats_x_vars_v2",
+                    )
+                    custom_x = st.text_input(
+                        "Custom X-Axis Variable(s) (comma-separated, e.g. var1, var2)",
+                        "",
+                    )
+
+                with axis_col2:
+                    y_vars_sel = st.multiselect(
+                        "Y-Axis Variable(s)",
+                        dropdown_vars,
+                        format_func=lambda x: var_options[x],
+                        default=default_y,
+                        key="stats_y_vars_v2",
+                    )
+                    custom_y = st.text_input(
+                        "Custom Y-Axis Variable(s) (comma-separated, e.g. var1, var2)",
+                        "",
+                    )
 
                 if st.button("Generate Selected Figures"):
+                    x_vars = list(x_vars_sel)
+                    if custom_x.strip():
+                        x_vars.extend(
+                            [x.strip() for x in custom_x.split(",") if x.strip()]
+                        )
+                    y_vars = list(y_vars_sel)
+                    if custom_y.strip():
+                        y_vars.extend(
+                            [y.strip() for y in custom_y.split(",") if y.strip()]
+                        )
+
+                    marker_size_var = (
+                        custom_marker.strip()
+                        if custom_marker.strip()
+                        else marker_size_var_sel
+                    )
+
+                    # Ensure custom vars are properly mapped in var_options and filtered_df
+                    custom_vars_to_add = set(
+                        x_vars
+                        + y_vars
+                        + ([marker_size_var] if marker_size_var != "None" else [])
+                    )
+                    for cv in custom_vars_to_add:
+                        if cv not in var_options:
+                            var_options[cv] = _format_var_name(cv)
+                        if (
+                            cv not in filtered_df.columns
+                            and f"data_{cv}" not in filtered_df.columns
+                        ):
+                            filtered_df[cv] = np.nan
+
+                    # Overwrite the temp CSV so the plot functions have access to the new NaN custom variables
+                    filtered_df.to_csv(filtered_csv_path, index=False)
+
                     with st.spinner("Generating statistical figures..."):
                         if not x_vars or not y_vars:
                             st.error("Please select at least one X and one Y variable.")
@@ -2489,67 +2586,67 @@ def main():
                                 f"Please select the same number of X and Y variables for pairwise plotting (you selected {len(x_vars)} X and {len(y_vars)} Y)."
                             )
                         else:
-                            # --- Interactive Plotly figures ---
-                            plotly_plots = [
-                                p for p in plots_to_gen if p != "Seaborn Joint-Plots"
-                            ]
-                            if plotly_plots:
-                                for x_var, y_var in zip(x_vars, y_vars):
-                                    if len(x_vars) > 1:
-                                        st.markdown(
-                                            f"### {var_options[x_var]} vs {var_options[y_var]}"
-                                        )
-
-                                    figures, err = generate_interactive_plots(
-                                        filtered_csv_path,
-                                        dark_mode=is_dark_mode,
-                                        selected_plots=plotly_plots,
+                            is_interactive = "Interactive" in plot_engine
+                            plot_is_dark = "Dark" in plot_theme
+                            
+                            for x_var, y_var in zip(x_vars, y_vars):
+                                st.markdown(
+                                    f"#### {var_options.get(x_var, x_var)} vs {var_options.get(y_var, y_var)}"
+                                )
+                                
+                                if is_interactive:
+                                    # Use Plotly
+                                    plotly_figs, err = generate_interactive_plots(
+                                        csv_file_path=filtered_csv_path,
+                                        dark_mode=plot_is_dark,
+                                        selected_plots=plots_to_gen,
                                         x_var=x_var,
                                         y_var=y_var,
                                     )
                                     if err:
                                         st.error(err)
                                     else:
-                                        for title, fig in figures.items():
-                                            if len(x_vars) == 1:
-                                                st.write(f"### {title}")
+                                        for title, fig in plotly_figs.items():
+                                            if title == "Seaborn Joint-Plots":
+                                                st.markdown(f"**Interactive Joint-Plots**")
+                                                j_cols = st.columns(2)
+                                                for j_idx, j_fig in enumerate(fig):
+                                                    if j_fig:
+                                                        j_cols[j_idx % 2].plotly_chart(j_fig, use_container_width=True, theme=None)
                                             else:
-                                                st.write(f"**{title}**")
-
-                                            if fig:
-                                                st.plotly_chart(
-                                                    fig,
-                                                    width="stretch",
-                                                )
-                                            else:
-                                                st.warning(
-                                                    f"Could not generate {title}"
-                                                )
-
-                            # --- Static Seaborn joint-plots ---
-                            if "Seaborn Joint-Plots" in plots_to_gen:
-                                for x_var, y_var in zip(x_vars, y_vars):
-                                    st.markdown(
-                                        f"### Seaborn Joint-Plot: "
-                                        f"{var_options.get(x_var, x_var)} vs "
-                                        f"{var_options.get(y_var, y_var)}"
+                                                st.plotly_chart(fig, use_container_width=True, theme=None)
+                                else:
+                                    # Use Matplotlib / Seaborn (Static)
+                                    static_figs, err = generate_static_plots(
+                                        csv_file_path=filtered_csv_path,
+                                        dark_mode=plot_is_dark,
+                                        selected_plots=plots_to_gen,
+                                        x_var=x_var,
+                                        y_var=y_var,
                                     )
-                                    try:
-                                        sb_fig = generate_seaborn_jointplots(
-                                            df_full=filtered_df,
-                                            x_key=x_var,
-                                            y_key=y_var,
-                                            x_label=var_options.get(x_var, x_var),
-                                            y_label=var_options.get(y_var, y_var),
-                                            dark_mode=is_dark_mode,
-                                            marker_size_var=marker_size_var,
-                                        )
-                                        st.pyplot(sb_fig)
-                                    except Exception as e:
-                                        st.error(
-                                            f"Error generating Seaborn Joint-Plot: {e}"
-                                        )
-
+                                    if err:
+                                        st.error(err)
+                                    else:
+                                        for title, fig in static_figs.items():
+                                            st.pyplot(fig, transparent=False, facecolor="black" if plot_is_dark else "white")
+                                            
+                                    # Static Seaborn Joint Plot is handled specially because it requires extra parameters
+                                    if "Seaborn Joint-Plots" in plots_to_gen:
+                                        try:
+                                            sb_fig = generate_seaborn_jointplots(
+                                                df_full=filtered_df,
+                                                x_key=x_var,
+                                                y_key=y_var,
+                                                x_label=var_options.get(x_var, x_var),
+                                                y_label=var_options.get(y_var, y_var),
+                                                dark_mode=plot_is_dark,
+                                                marker_size_var=marker_size_var,
+                                            )
+                                            st.pyplot(sb_fig, transparent=False, facecolor="black" if plot_is_dark else "white")
+                                        except Exception as e:
+                                            st.error(
+                                                f"Error generating seaborn joint plots: {e}"
+                                            )
 
 if __name__ == "__main__":
     main()

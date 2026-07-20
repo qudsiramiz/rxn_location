@@ -86,7 +86,8 @@ The easiest way to use `rxn_location` is via the interactive Streamlit graphical
 - **Parameter Presets**: Save and load your favorite sidebar configurations.
 - **Data Cache Dashboard**: Monitor and clean up the local PySPEDAS data cache directly from the sidebar.
 - **Dynamic Plot Filtering**: Filter statistics by IMF Bz, dynamic pressure, and shear angle before plotting.
-- **Quick Re-run & Auto-Run**: Instantly load parameters from a previously saved jet into the dashboard ("Load into Dashboard"), or use the new "Load & Run Models" button to auto-execute the entire pipeline in one click.
+- **Advanced Plotting Engines**: Toggle between `Plotly (Interactive)` and `Matplotlib (Static)` engines dynamically when generating statistical plots.
+- **Statistical Plots**: Added support for interactive 2D Density Histograms (Hexbins) in Plotly, and Box Plots & Violin Plots in Matplotlib.
 - **Batch Processing from File Upload**: In addition to time-range and target-count batch processing, "Statistics Mode" now accepts uploaded `.csv` or `.txt` files containing custom lists of timestamps. It leverages robust parsing to seamlessly run the jet reversal check and models on every timestamp provided.
 
 To launch the GUI, run the following command from the root directory:

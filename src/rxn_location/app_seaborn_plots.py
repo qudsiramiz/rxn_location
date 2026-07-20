@@ -126,8 +126,8 @@ def _kde_plot_panel(
     """
 
     pad = 3
-    labelsize = 18
-    ticklabelsize = 16
+    labelsize = 16
+    ticklabelsize = 14
     clabelsize = 14
     ticklength = 8
 
@@ -142,8 +142,8 @@ def _kde_plot_panel(
         xlim=xlim,
         ylim=ylim,
         height=height,
-        ratio=ratio,
-        space=space,
+        ratio=5,
+        space=0.1,
     )
     jg.ax_joint.scatter(df[x], df[y], s=marker_size, alpha=alpha, color=color)
 
@@ -213,9 +213,9 @@ def _kde_plot_panel(
 
     # Styling
     if dark_mode:
-        text_color, face_color, edge_color = "white", "black", "white"
+        text_color, face_color, edge_color = "white", "#1e1e1e", "none"
     else:
-        text_color, face_color, edge_color = "black", "white", "black"
+        text_color, face_color, edge_color = "black", "#f0f0f0", "none"
 
     # Spearman correlation line
     if spearman is not None:
@@ -231,9 +231,9 @@ def _kde_plot_panel(
             ha="left",
             bbox=dict(
                 facecolor=face_color,
-                alpha=1,
+                alpha=0.8,
                 edgecolor=edge_color,
-                boxstyle="round,pad=0.2",
+                boxstyle="round,pad=0.4",
             ),
             fontsize=ticklabelsize,
             color=text_color,
@@ -301,7 +301,7 @@ def _kde_plot_panel(
                 labelrotation=0,
             )
 
-    jg.set_axis_labels(x_label_final, y_label, fontsize=labelsize, labelpad=-1)
+    jg.set_axis_labels(x_label_final, y_label, fontsize=labelsize, labelpad=12)
     jg.fig.axes[0].text(
         1,
         0.02,
@@ -311,9 +311,9 @@ def _kde_plot_panel(
         ha="right",
         bbox=dict(
             facecolor=face_color,
-            alpha=1,
+            alpha=0.8,
             edgecolor=edge_color,
-            boxstyle="round,pad=0.2",
+            boxstyle="round,pad=0.4",
         ),
         fontsize=ticklabelsize,
         color=text_color,
@@ -369,6 +369,7 @@ def generate_seaborn_jointplots(
     # --- Set style ---
     if dark_mode:
         plt.style.use("dark_background")
+        plt.rcParams.update({"axes.facecolor": "black", "figure.facecolor": "black"})
     else:
         plt.style.use("default")
 
@@ -551,7 +552,7 @@ def generate_seaborn_jointplots(
             _SeabornFig2Grid(panel, fig, gs[idx])
 
     gs.tight_layout(fig, rect=[0.02, 0.02, 0.98, 0.98])
-    gs.update(top=0.95, bottom=0.08, left=0.1, right=0.95, hspace=0.05, wspace=0.25)
+    gs.update(top=0.95, bottom=0.08, left=0.1, right=0.95, hspace=0.1, wspace=0.3)
 
     # Close any stray panel figures to prevent memory leaks
     plt.close("all")

@@ -139,7 +139,7 @@ def generate_interactive_plots(
                         )
 
             fig.update_layout(
-                template=template,
+                template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
                 height=700,
                 title_text="Reconnection Distance Histograms",
                 title_x=0.5,
@@ -147,6 +147,52 @@ def generate_interactive_plots(
             figures["Histograms"] = fig
         except Exception as e:
             print(f"Interactive Histogram error: {e}")
+
+    # ── KDE Plots ───────────────────────────────────────────────────────
+    if "KDE Plots" in selected_plots:
+        import plotly.figure_factory as ff
+        try:
+            fig = make_subplots(
+                rows=2,
+                cols=2,
+                subplot_titles=model_names,
+                vertical_spacing=0.12,
+                horizontal_spacing=0.08,
+            )
+            for i, (df_n, name) in enumerate(zip(df_list, model_names)):
+                row, col = i // 2 + 1, i % 2 + 1
+                if len(df_n) > 0 and x_var in df_n.columns:
+                    vals = df_n[x_var].dropna()
+                    if len(vals) > 1:
+                        # Create distplot just for the KDE curve
+                        try:
+                            kde_fig = ff.create_distplot([vals], [name], show_hist=False, show_rug=False, colors=[color_list[i]])
+                            for trace in kde_fig['data']:
+                                fig.add_trace(trace, row=row, col=col)
+                        except Exception as e:
+                            print(f"Skipping KDE for {name} due to error: {e}")
+                            
+                fig.update_xaxes(
+                    title_text=x_label if row == 2 else "",
+                    row=row,
+                    col=col,
+                )
+                fig.update_yaxes(
+                    title_text="Density" if col == 1 else "",
+                    row=row,
+                    col=col,
+                )
+
+            fig.update_layout(
+                template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
+                height=700,
+                title_text=f"KDE Plots: {x_label}",
+                title_x=0.5,
+                showlegend=False,
+            )
+            figures["KDE Plots"] = fig
+        except Exception as e:
+            print(f"Interactive KDE Plot error: {e}")
 
     # ── 2D Histograms (Heatmaps) ────────────────────────────────────────
     if "2D Histograms" in selected_plots:
@@ -187,7 +233,7 @@ def generate_interactive_plots(
                 )
 
             fig.update_layout(
-                template=template,
+                template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
                 height=700,
                 title_text=f"2D Histograms: {x_label} vs {y_label}",
                 title_x=0.5,
@@ -265,7 +311,7 @@ def generate_interactive_plots(
                 )
 
             fig.update_layout(
-                template=template,
+                template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
                 height=700,
                 title_text=f"Scatter: {x_label} vs {y_label}",
                 title_x=0.5,
@@ -336,7 +382,7 @@ def generate_interactive_plots(
             fig.update_yaxes(title_text="MMS Position Z [Rₑ]", row=1, col=2)
 
             fig.update_layout(
-                template=template,
+                template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
                 height=500,
                 title_text="MMS Spacecraft Positions",
                 title_x=0.5,
@@ -344,5 +390,44 @@ def generate_interactive_plots(
             figures["MMS Location Scatter Plot"] = fig
         except Exception as e:
             print(f"Interactive MMS Location Plot error: {e}")
+
+    # ── Interactive Joint-Plots ─────────────────────────────────────────
+    if "Seaborn Joint-Plots" in selected_plots:
+        try:
+            # We can't do a 2x2 grid of joint plots easily in Plotly Subplots, 
+            # so we create 4 separate figures and return them as a list under this key.
+            # The frontend (app.py) will render them in a 2x2 st.columns grid.
+            joint_figures = []
+            import plotly.express as px
+
+            for i, (df_n, name) in enumerate(zip(df_list, model_names)):
+                if len(df_n) > 0 and x_var in df_n.columns and y_var in df_n.columns:
+                    # Filter out NaNs
+                    df_clean = df_n.dropna(subset=[x_var, y_var]).copy()
+                    if len(df_clean) > 0:
+                        fig = px.scatter(
+                            df_clean, 
+                            x=x_var, 
+                            y=y_var, 
+                            marginal_x="histogram", 
+                            marginal_y="histogram",
+                            color_discrete_sequence=[color_list[i]],
+                            title=name
+                        )
+                        fig.update_layout(
+                            template=template, paper_bgcolor="black" if dark_mode else "white", plot_bgcolor="black" if dark_mode else "white", font=dict(color="white" if dark_mode else "black"),
+                            xaxis_title=x_label,
+                            yaxis_title=y_label,
+                            height=500
+                        )
+                        joint_figures.append(fig)
+                    else:
+                        joint_figures.append(None)
+                else:
+                    joint_figures.append(None)
+
+            figures["Seaborn Joint-Plots"] = joint_figures
+        except Exception as e:
+            print(f"Interactive Joint-Plots error: {e}")
 
     return figures, None

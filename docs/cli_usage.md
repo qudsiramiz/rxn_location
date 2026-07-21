@@ -33,12 +33,13 @@ png
 --plot-seaborn
 ```
 
+> [!NOTE]
+> A comprehensive example configuration file containing all possible inputs and their descriptions is available at [sample_files/my_config.txt](sample_files/my_config.txt).
+
 2. Run the tool with the configuration file:
 ```bash
-rxn-batch @my_config.txt
+rxn-batch @sample_files/my_config.txt
 ```
-
-You can view a sample configuration file at `sample_files/sample_batch_config.txt`.
 
 ## Common Examples
 

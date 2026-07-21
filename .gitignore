@@ -145,13 +145,17 @@ pyrightconfig.json
 src/rxn_location/figures/*
 src/rxn_location/instructions.md
 /figures/*
+/interactive_figures/*
 examples/figures/*
 examples/interactive_figures/*
 figures_batch/*
 *.pkl
+batch_run_results/*
 
 # Poetry
 poetry.lock
 
 .temp_master_list_stats.csv
 .temp_filtered_stats.csv
+data/mms_jet_reversal_times.csv
+data/mms_jet_reversal_times.csv

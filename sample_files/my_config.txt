@@ -1,0 +1,67 @@
+# This is a comprehensive configuration file for the rxn-batch CLI tool.
+# You can pass this entire file to the python script using the @ prefix:
+#    rxn-batch @example/my_config.txt
+#
+# Each argument and its value must be on separate lines.
+
+# --- Basic Requirements ---
+# 1. Path to the input file containing the list of times (required)
+--input
+data/potential_jet_reconnection_times.txt
+
+# --- Spacecraft & Output ---
+# MMS Probe (1-4)
+--probe
+3
+# Output directory for saving plots
+--outdir
+./batch_run_results
+# Name of the output CSV containing the final statistics
+--csv_name
+my_batch_stats.csv
+
+# --- Reconnection Model Parameters ---
+# Tsyganenko model to use (T89, T96, T01, T04s)
+--tsy_model
+T96
+# Magnetopause standoff distance scaling
+--m_p
+0.5
+# Spatial resolution for 3D model grid (Re)
+--dr
+0.25
+# X, Y, Z boundaries for 3D grid (Re)
+--limits
+20
+
+# --- Jet Reversal Tuning ---
+# Data rate (fast or brst)
+--data_rate
+fast
+# Time window around crossing time to search for jets (s)
+--dt
+300
+# Minimum number of data points for a valid jet
+--jet_len
+3
+# Minutes to shift the crossing time on each retry when searching for jets
+--t_delta
+2
+# Maximum number of time-shifted retries when initial jet check fails
+--max_retries
+5
+
+# --- Plotting & Output Formatting ---
+# Format for saved plots (html for interactive Plotly, pdf/png for static Matplotlib)
+--format
+html
+# Engine used to plot the jet reversal check (plotly or matplotlib)
+--plot_engine
+plotly
+# Verbosity level (0-3). 0: silent, 1: important only, 2: standard (no PySPEDAS), 3: all.
+--verbosity
+2
+
+# --- Flags (Do not provide a value for these!) ---
+# Generate final statistical Seaborn joint-plots from the Master List
+--plot-seaborn

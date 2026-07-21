@@ -30,8 +30,10 @@ def jet_reversal_check(
     verbose=True,
     return_plotly_fig=False,
     dark_mode=False,
-    save_pytplot=True,
-    save_delta_v=True,
+    save_jet_int=True,
+    save_jet_stat=True,
+    save_delta_v_int=False,
+    save_delta_v_stat=False,
 ):
     """
     For a given crossing time and a given probe, the function finds out if MMS observed a jet
@@ -124,7 +126,7 @@ def jet_reversal_check(
         probe=probe,
         data_rate=data_rate,
         level=level,
-        datatype=data_type,
+        datatype=[data_type, "des-moms"] if isinstance(data_type, str) else data_type,
         varnames=mms_fpi_varnames,
         time_clip=time_clip,
         latest_version=latest_version,
@@ -371,6 +373,9 @@ def jet_reversal_check(
         verbose=verbose,
         ind_crossing=ind_crossing,
         date_obs=date_obs,
+        save_delta_v_int=save_delta_v_int,
+        save_delta_v_stat=save_delta_v_stat,
+        dark_mode=dark_mode,
     )
 
     # Add vp_lmn_diff_l to ptt FIRST so the pseudo-variable can find it!
@@ -686,6 +691,7 @@ def jet_reversal_check(
         return_plotly_fig=return_plotly_fig,
         dark_mode=dark_mode,
         figname=figname,
+        save_pytplot=save_jet_stat,
     )
 
     return fig, jet_detection, data_dict
@@ -700,6 +706,9 @@ def check_jet_location(
     verbose=True,
     ind_crossing=None,
     date_obs=None,
+    save_delta_v_int=False,
+    save_delta_v_stat=False,
+    dark_mode=False,
 ):
     """
     Detects the presence and characteristics of a reconnection jet within the provided MMS data.
@@ -959,68 +968,71 @@ def check_jet_location(
         else:
             print(f"\n\033[1;31m No jet found at {t_jet_center}\033[0m \n")
 
-    # Plot vp_lmn_diff_l, delta_v_max, delta_v_min, v_max_median, and v_min_median
-    plt.figure(figsize=(10, 5))
-    plt.plot(vp_lmn_diff_l, "r-", alpha=0.3)
-    plt.plot(delta_v_max, "b-", alpha=1, label="$\\Delta v_{\\rm max}$")
-    plt.plot(delta_v_min, "g-", alpha=1, label="$\\Delta v_{\\rm min}$")
-    # Draw a vertical line at t_jet_center
-    plt.axvline(t_jet_center, color="k", linestyle="--", alpha=0.5)
-    # Draw a vertical line at t_jet_center_minus_1_min
-    plt.axvline(t_jet_center_minus_1_min, color="m", linestyle="--", alpha=0.5)
-    # Draw a vertical line at t_jet_center_plus_1_min
-    plt.axvline(t_jet_center_plus_1_min, color="g", linestyle="--", alpha=0.5)
-    # Draw a horizontal line at v_thresh
-    plt.axhline(v_thresh, color="k", linestyle="--", alpha=0.5)
-    # Draw a horizontal line at -v_thresh
-    plt.axhline(-v_thresh, color="k", linestyle="--", alpha=0.5)
-    plt.title(
-        "Different delta as a function of time at"
-        f" {t_jet_center.strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-    plt.xlabel("Time [UTC]")
-    plt.ylabel("$\\Delta V$ [km/s]")
-    plt.legend(loc=1)
-    # On plot write jet detection status
-    if jet_detection:
-        plt.text(
-            0.05,
-            0.95,
-            ind_crossing,
-            horizontalalignment="left",
-            verticalalignment="top",
-            transform=plt.gca().transAxes,
-            color="g",
-        )
-        save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/jet/"
-    else:
-        plt.text(
-            0.05,
-            0.95,
-            ind_crossing,
-            horizontalalignment="left",
-            verticalalignment="top",
-            transform=plt.gca().transAxes,
-            color="r",
-        )
-        save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/no_jet/"
-
-    if save_delta_v:
+    if save_delta_v_stat or save_delta_v_int:
+        if jet_detection:
+            save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/jet/"
+        else:
+            save_folder = f"figures/jet_reversal_checks/check_{date_obs}/delta_v/no_jet/"
+            
         if not os.path.exists(save_folder):
             os.makedirs(save_folder)
 
-        fig_name = f"{save_folder}/delta_v_{t_jet_center.strftime('%Y-%m-%d_%H-%M-%S')}.png"
+        # Matplotlib Static Plot
+        if save_delta_v_stat:
+            plt.figure(figsize=(10, 5))
+            plt.plot(df_mms.index, vp_lmn_diff_l, "r-", alpha=0.3)
+            plt.plot(df_mms.index[ind_jet_center:ind_jet_center_plus_1_min], delta_v_max, "b-", alpha=1, label="$\\Delta v_{\\rm max}$")
+            plt.plot(df_mms.index[ind_jet_center_minus_1_min:ind_jet_center], delta_v_min, "g-", alpha=1, label="$\\Delta v_{\\rm min}$")
+            plt.axvline(t_jet_center, color="k", linestyle="--", alpha=0.5)
+            plt.axvline(t_jet_center_minus_1_min, color="m", linestyle="--", alpha=0.5)
+            plt.axvline(t_jet_center_plus_1_min, color="g", linestyle="--", alpha=0.5)
+            plt.axhline(v_thresh, color="k", linestyle="--", alpha=0.5)
+            plt.axhline(-v_thresh, color="k", linestyle="--", alpha=0.5)
+            plt.title(f"Different delta as a function of time at {t_jet_center.strftime('%Y-%m-%d %H:%M:%S')}")
+            plt.xlabel("Time [UTC]")
+            plt.ylabel("$\\Delta V$ [km/s]")
+            plt.legend(loc=1)
+            
+            color = "g" if jet_detection else "r"
+            plt.text(0.05, 0.95, ind_crossing, horizontalalignment="left", verticalalignment="top", transform=plt.gca().transAxes, color=color)
 
-        plt.savefig(
-            fig_name,
-            dpi=300,
-            bbox_inches="tight",
-            pad_inches=0.1,
-            transparent=True,
-            facecolor="w",
-            edgecolor="w",
-            orientation="landscape",
-        )
+            fig_name = f"{save_folder}/delta_v_{t_jet_center.strftime('%Y-%m-%d_%H-%M-%S')}.png"
+            plt.savefig(
+                fig_name, dpi=300, bbox_inches="tight", pad_inches=0.1,
+                transparent=True, facecolor="w", edgecolor="w", orientation="landscape",
+            )
+            plt.close()
+
+        # Plotly Interactive Plot
+        if save_delta_v_int:
+            import plotly.graph_objects as go
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=df_mms.index, y=vp_lmn_diff_l, mode='lines', line=dict(color='red'), opacity=0.3, name='vp_lmn_diff_l'))
+            fig.add_trace(go.Scatter(x=df_mms.index[ind_jet_center:ind_jet_center_plus_1_min], y=delta_v_max, mode='lines', line=dict(color='blue'), name='Δv_max'))
+            fig.add_trace(go.Scatter(x=df_mms.index[ind_jet_center_minus_1_min:ind_jet_center], y=delta_v_min, mode='lines', line=dict(color='green'), name='Δv_min'))
+            
+            fig.add_vline(x=t_jet_center, line_dash="dash", line_color="black", opacity=0.5)
+            fig.add_vline(x=t_jet_center_minus_1_min, line_dash="dash", line_color="magenta", opacity=0.5)
+            fig.add_vline(x=t_jet_center_plus_1_min, line_dash="dash", line_color="green", opacity=0.5)
+            
+            fig.add_hline(y=v_thresh, line_dash="dash", line_color="black", opacity=0.5)
+            fig.add_hline(y=-v_thresh, line_dash="dash", line_color="black", opacity=0.5)
+            
+            # Add annotation for crossing index
+            fig.add_annotation(
+                x=0.05, y=0.95, xref="paper", yref="paper", text=str(ind_crossing), 
+                showarrow=False, font=dict(color="green" if jet_detection else "red")
+            )
+            
+            fig.update_layout(
+                title=f"Different delta as a function of time at {t_jet_center.strftime('%Y-%m-%d %H:%M:%S')}",
+                xaxis_title="Time [UTC]",
+                yaxis_title="ΔV [km/s]",
+                template="plotly_dark" if dark_mode else "plotly_white"
+            )
+            
+            fig_name_html = f"{save_folder}/delta_v_{t_jet_center.strftime('%Y-%m-%d_%H-%M-%S')}.html"
+            fig.write_html(fig_name_html)
 
     return (
         jet_detection,
@@ -1154,6 +1166,7 @@ def tplot_fnc(
     return_plotly_fig=False,
     dark_mode=False,
     figname=None,
+    save_pytplot=True,
 ):
     """
     Plot the data from the MMS spacecraft along with jet detection results

@@ -925,8 +925,8 @@ def ridge_finder_multiple(
 
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.{fig_format}"
-            plt.savefig(fig_name, bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200)
-            abs_fig_name = os.path.abspath(fig_name)
+            plt.savefig(str(fig_name), bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200)
+            abs_fig_name = os.path.abspath(str(fig_name))
             vprint(2, f"Figure saved as {abs_fig_name}")
         except Exception as e:
             vprint(1, e, color="red")
@@ -2138,8 +2138,6 @@ def ridge_finder_multiple_interactive(
         fig.add_vline(x=0, line_dash="solid", line_color="gray", line_width=0.5, row=row, col=col)
 
     if save_rc_file:
-        import os
-
         os.makedirs(rc_folder, exist_ok=True)
         var_list = (
             "mms_spc_num,date_from,date_to,spc_pos_x,spc_pos_y,spc_pos_z,"
@@ -2276,7 +2274,7 @@ def ridge_finder_multiple_interactive(
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.html"
             fig.write_html(str(fig_name), default_width="100%", default_height="100%")
-            abs_fig_name = os.path.abspath(fig_name)
+            abs_fig_name = os.path.abspath(str(fig_name))
             vprint(2, f"Interactive figure saved as {abs_fig_name}")
         except Exception as e:
             vprint(1, e, color="red")

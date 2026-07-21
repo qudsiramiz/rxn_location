@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.3.2] - 2026-07-21
+### Fixed
+- Fixed the logic for saving the delta v plots in the Jet Reversal Check function, so that the plots are now properly saved into structured directories (e.g., `interactive_figures/jet_reversal_checks/mms<probe>/`) rather than root directories.
+- Enabled automatic, unconditional plot saving for all generated visualization figures for the Jet Reversal Check function during GUI Single Event mode exploration.
+- Fixed a bug causing PyTplot Jet Reversal PNGs to overwrite a single `mms_jet_reversal_check.png` default file instead of following the structured directory naming convention.
+
+### Added
+- Added `src/rxn_location/data/` to include `potential_jet_reconnection_times.txt`
+- Added `src/rxn_location/data/` to include `sample_files/`
+
+
 ## [0.3.1] - 2026-07-20
 ### Added
 - Added the icon for the package.

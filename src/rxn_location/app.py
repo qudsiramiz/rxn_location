@@ -453,29 +453,41 @@ def main():
     set_verbosity(verbosity)
 
     with st.sidebar.expander("Figure Saving Settings (Single Event Mode)", expanded=False):
-        save_pytplot = st.checkbox(
-            "Save Jet Reversal Figure (PyTplot)",
-            value=st.session_state.get("save_pytplot", True),
-        )
-        st.session_state["save_pytplot"] = save_pytplot
-        
-        save_delta_v = st.checkbox(
-            "Save Delta-V Figure (Matplotlib)",
-            value=st.session_state.get("save_delta_v", True),
-        )
-        st.session_state["save_delta_v"] = save_delta_v
-        
-        save_recon_interactive = st.checkbox(
-            "Save Reconnection Model (Interactive Plotly)",
-            value=st.session_state.get("save_recon_interactive", True),
-        )
-        st.session_state["save_recon_interactive"] = save_recon_interactive
-        
-        save_recon_static = st.checkbox(
-            "Save Reconnection Model (Static Matplotlib)",
-            value=st.session_state.get("save_recon_static", True),
-        )
-        st.session_state["save_recon_static"] = save_recon_static
+        save_jet = st.checkbox("Save Jet Reversal Figure", value=st.session_state.get("save_jet", True))
+        st.session_state["save_jet"] = save_jet
+        save_jet_int = False
+        save_jet_stat = False
+        if save_jet:
+            _, col2 = st.columns([0.1, 0.9])
+            with col2:
+                save_jet_int = st.checkbox("Interactive", value=st.session_state.get("save_jet_int", True), key="cb_jet_int")
+                save_jet_stat = st.checkbox("Static", value=st.session_state.get("save_jet_stat", True), key="cb_jet_stat")
+        st.session_state["save_jet_int"] = save_jet_int
+        st.session_state["save_jet_stat"] = save_jet_stat
+
+        save_delta = st.checkbox("Save Delta-V Figure", value=st.session_state.get("save_delta", False))
+        st.session_state["save_delta"] = save_delta
+        save_delta_int = False
+        save_delta_stat = False
+        if save_delta:
+            _, col2 = st.columns([0.1, 0.9])
+            with col2:
+                save_delta_int = st.checkbox("Interactive", value=st.session_state.get("save_delta_int", True), key="cb_delta_int")
+                save_delta_stat = st.checkbox("Static", value=st.session_state.get("save_delta_stat", True), key="cb_delta_stat")
+        st.session_state["save_delta_int"] = save_delta_int
+        st.session_state["save_delta_stat"] = save_delta_stat
+
+        save_recon = st.checkbox("Save Reconnection Model", value=st.session_state.get("save_recon", True))
+        st.session_state["save_recon"] = save_recon
+        save_recon_int = False
+        save_recon_stat = False
+        if save_recon:
+            _, col2 = st.columns([0.1, 0.9])
+            with col2:
+                save_recon_int = st.checkbox("Interactive", value=st.session_state.get("save_recon_int", True), key="cb_recon_int")
+                save_recon_stat = st.checkbox("Static", value=st.session_state.get("save_recon_stat", True), key="cb_recon_stat")
+        st.session_state["save_recon_int"] = save_recon_int
+        st.session_state["save_recon_stat"] = save_recon_stat
 
     # --- Observation Parameters ---
     st.sidebar.header("Observation Parameters")
@@ -911,7 +923,7 @@ def main():
                 "limits": limits,
             }
 
-        def run_jet_check(c_time, skip_master_add=False, save_data=False):
+        def run_jet_check(c_time, skip_master_add=False, save_data=False, error_placeholder=None):
             """
             Executes the jet reversal detection algorithm for a specific crossing time.
 
@@ -927,8 +939,10 @@ def main():
                 f"Running Jet Reversal Check for MMS{mms_probe} at {c_time.strftime('%H:%M:%S')}..."
             ):
                 try:
-                    save_pytplot = save_data and st.session_state.get("save_pytplot", True)
-                    save_delta_v = save_data and st.session_state.get("save_delta_v", True)
+                    save_jet_int = save_data and st.session_state.get("save_jet_int", True)
+                    save_jet_stat = save_data and st.session_state.get("save_jet_stat", True)
+                    save_delta_int = save_data and st.session_state.get("save_delta_int", True)
+                    save_delta_stat = save_data and st.session_state.get("save_delta_stat", True)
 
                     res = jet_reversal_check(
                         crossing_time=c_time,
@@ -942,16 +956,19 @@ def main():
                         date_obs=c_time.strftime("%Y%m%d"),
                         return_plotly_fig=True,
                         dark_mode=is_dark_mode,
-                        save_pytplot=save_pytplot,
-                        save_delta_v=save_delta_v,
+                        save_jet_int=save_jet_int,
+                        save_jet_stat=save_jet_stat,
+                        save_delta_v_int=save_delta_int,
+                        save_delta_v_stat=save_delta_stat,
                     )
+                    ph = error_placeholder if error_placeholder else jet_error_placeholder
                     if res is None:
-                        jet_error_placeholder.error(
+                        ph.error(
                             f"Magnetosphere or magnetosheath region not found for date {c_time.strftime('%Y-%m-%d %H:%M:%S+00:00')}"
                         )
                         return False, False
                     else:
-                        jet_error_placeholder.empty()
+                        ph.empty()
 
                     fig, jet_detection, data_dict = res
 
@@ -979,7 +996,7 @@ def main():
                     save_auto_session()
 
                     # --- Save Jet Plot if requested ---
-                    if save_data and fig is not None:
+                    if save_data and save_jet_int and fig is not None:
                         try:
                             import os
                             jet_dir = f"interactive_figures/jet_reversal_checks/mms{mms_probe}"
@@ -988,10 +1005,22 @@ def main():
                                 jet_dir, f"jet_plot_{c_time.strftime('%Y-%m-%d_%H%M%S')}.html"
                             )
                             fig.write_html(jet_plot_filename)
-                            # Also save a png version for easy viewing
-                            fig.write_image(jet_plot_filename.replace(".html", ".png"))
                         except Exception as e:
-                            st.warning(f"Could not save jet plot: {e}")
+                            st.warning(f"Could not save interactive jet plot: {e}")
+                    
+                    if save_data and save_jet_stat and fig is not None:
+                        try:
+                            import os
+                            jet_dir = f"interactive_figures/jet_reversal_checks/mms{mms_probe}"
+                            os.makedirs(jet_dir, exist_ok=True)
+                            jet_plot_filename = os.path.join(
+                                jet_dir, f"jet_plot_{c_time.strftime('%Y-%m-%d_%H%M%S')}.png"
+                            )
+                            # PyTplot is already saved by save_jet_stat inside jet_reversal_check, 
+                            # but we'll also save the plotly PNG here just in case they want a 1:1 match.
+                            fig.write_image(jet_plot_filename)
+                        except Exception as e:
+                            st.warning(f"Could not save static jet plot: {e}")
 
                     # --- Master List Integration (Features #1-#4) ---
                     sw_params = None
@@ -1155,8 +1184,8 @@ def main():
 
                     sw_params = res[8]
 
-                    save_recon_interactive = save_data and st.session_state.get("save_recon_interactive", True)
-                    save_recon_static = save_data and st.session_state.get("save_recon_static", True)
+                    save_recon_interactive = save_data and st.session_state.get("save_recon_int", True)
+                    save_recon_static = save_data and st.session_state.get("save_recon_stat", True)
 
                     figure_inputs = {
                         "image": images,
@@ -1199,8 +1228,8 @@ def main():
                         "dark_mode": is_dark_mode,
                         "b_grids": (res[0], res[1], res[2], res[12], res[13], res[14]),
                         "save_rc_file": save_data and bool(csv_name),
-                        "rc_file_name": csv_name,
-                        "rc_folder": "./",
+                        "rc_file_name": csv_name if csv_name else "rc_file.csv",
+                        "rc_folder": "data",
                         "df_jet_reversal": det,
                     }
 
@@ -1251,8 +1280,9 @@ def main():
                 f"What would you like to do?"
             )
             col_a, col_b, col_c, col_d = st.columns(4)
+            dialog_err_ph = st.empty()
             if col_a.button("Generate Jet Reversal Plot Only", key="dup_jet_only"):
-                success, jet_det = run_jet_check(c_time, skip_master_add=True, save_data=True)
+                success, jet_det = run_jet_check(c_time, skip_master_add=True, save_data=True, error_placeholder=dialog_err_ph)
                 if success:
                     if jet_det: st.toast("✅ Jet Reversal plot generated!", icon="✅")
                     else: st.toast("❌ Jet Reversal check completed. No jet found.", icon="❌")
@@ -1264,7 +1294,7 @@ def main():
                 st.rerun()
 
             if col_c.button("Generate Both", key="dup_both"):
-                s1, det = run_jet_check(c_time, skip_master_add=True, save_data=True)
+                s1, det = run_jet_check(c_time, skip_master_add=True, save_data=True, error_placeholder=dialog_err_ph)
                 s2, *_ = run_recon_models(c_time, save_data=True, det=det)
                 if s1 and s2: st.toast("✅ Both plots generated!", icon="✅")
                 st.rerun()

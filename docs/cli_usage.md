@@ -33,8 +33,9 @@ png
 --plot-seaborn
 ```
 
+https://www.qudsiramiz.space/rxn_location/latest/cli_usage/sample_files/my_config.txt
 > [!NOTE]
-> A comprehensive example configuration file containing all possible inputs and their descriptions is available at [sample_files/my_config.txt](sample_files/my_config.txt).
+> A comprehensive example configuration file containing all possible inputs and their descriptions is available at [sample_files/my_config.txt](../sample_files/my_config.txt).
 
 2. Run the tool with the configuration file:
 ```bash

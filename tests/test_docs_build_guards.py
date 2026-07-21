@@ -27,6 +27,7 @@ def test_docs_workflow_deploys_versioned_documentation():
     workflow = (REPO_ROOT / ".github/workflows/docs.yml").read_text()
 
     assert "fetch-depth: 0" in workflow
+    assert "git fetch origin gh-pages:gh-pages" in workflow
     assert "poetry version --short" in workflow
     assert "mike deploy --push --update-aliases" in workflow
     assert "mike set-default --push latest" in workflow

@@ -29,4 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           poetry install --no-interaction
-      - run: poetry run mkdocs gh-deploy --force
+      - name: Deploy versioned documentation
+        run: |
+          version="$(poetry version --short)"
+          poetry run mike deploy --push --update-aliases "$version" latest
+          poetry run mike set-default --push latest

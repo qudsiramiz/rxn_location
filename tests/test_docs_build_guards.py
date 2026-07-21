@@ -21,3 +21,17 @@ def test_pytz_is_declared_as_a_runtime_dependency():
     dependencies = pyproject["tool"]["poetry"]["dependencies"]
 
     assert "pytz" in dependencies
+
+
+def test_docs_workflow_deploys_versioned_documentation():
+    workflow = (REPO_ROOT / ".github/workflows/docs.yml").read_text()
+
+    assert "poetry version --short" in workflow
+    assert "mike deploy --push --update-aliases" in workflow
+    assert "mike set-default --push latest" in workflow
+
+
+def test_docs_config_enables_mike_version_selector():
+    config = (REPO_ROOT / "mkdocs.yml").read_text()
+
+    assert "  - mike\n" in config

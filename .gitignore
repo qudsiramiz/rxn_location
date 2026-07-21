@@ -159,3 +159,4 @@ poetry.lock
 .temp_filtered_stats.csv
 data/mms_jet_reversal_times.csv
 data/mms_jet_reversal_times.csv
+update.sh

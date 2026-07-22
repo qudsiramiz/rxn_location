@@ -5,7 +5,21 @@ import os
 from pathlib import Path
 import warnings
 
-import geopack.geopack as gp
+import tempfile
+
+# Patch os.path.dirname temporarily to bypass Streamlit Cloud's read-only filesystem for geopack
+_original_dirname = os.path.dirname
+def _patched_dirname(path):
+    if 'geopack' in path:
+        return tempfile.gettempdir()
+    return _original_dirname(path)
+
+os.path.dirname = _patched_dirname
+
+try:
+    import geopack.geopack as gp
+finally:
+    os.path.dirname = _original_dirname
 import h5py as hf
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches

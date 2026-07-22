@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.3] - 2026-07-23
+### Added
+- Added acknowledgement of NASA funding in the README.md and docs/index.md files.
+
+
 ## [0.3.2] - 2026-07-21
 ### Fixed
 - Fixed the logic for saving the delta v plots in the Jet Reversal Check function, so that the plots are now properly saved into structured directories (e.g., `interactive_figures/jet_reversal_checks/mms<probe>/`) rather than root directories.

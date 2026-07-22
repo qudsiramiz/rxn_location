@@ -135,6 +135,9 @@ When run, the script will output its default configurations, process each time, 
 
 NOTE: Sometimes, the MMS data is not downloaded properly by PySPEDAS. In that case, please check your internet connection or use the GUI's Data Cache Dashboard to manage corrupted files.
 
+# Acknowledgement
+Development of this package was supported by the NASA grant 80NSSC20K1356 and the successive Supplemental Open Source Software Award.
+
 # Contact
 If you have any questions, please contact [Ramiz A. Qudsi](https://www.qudsiramiz.space/) at
 [qudsiramiz@gmail.com](mailto:qudsiramiz@gmail.com)

@@ -1,9 +1,8 @@
-from rxn_location.logger import vprint
 import datetime
 import multiprocessing as mp
 import os
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import geopack.geopack as gp
 import h5py as hf
@@ -12,18 +11,20 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pyspedas as spd
 import plotly.graph_objects as go
 import plotly.io as pio
-from plotly.subplots import make_subplots
-from pyspedas.projects import mms
+import pyspedas as spd
 import scipy as sp
 import trjtrypy as tt
 from dateutil import parser
 from matplotlib.pyplot import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from plotly.subplots import make_subplots
+from pyspedas.projects import mms
 from skimage.filters import frangi
 from tabulate import tabulate
+
+from rxn_location.logger import vprint
 
 
 def get_shear(b_vec_1, b_vec_2, angle_unit="radians"):
@@ -925,7 +926,9 @@ def ridge_finder_multiple(
 
             bbb = f"{b_imf[0]:.0f}_{b_imf[1]:.0f}_{b_imf[2]:.0f}"
             fig_name = fig_folder / f"ridge_plot_{fig_time_range}_{bbb}.{fig_format}"
-            plt.savefig(str(fig_name), bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200)
+            plt.savefig(
+                str(fig_name), bbox_inches="tight", pad_inches=0.05, format=fig_format, dpi=200
+            )
             abs_fig_name = os.path.abspath(str(fig_name))
             vprint(2, f"Figure saved as {abs_fig_name}")
         except Exception as e:
@@ -942,7 +945,7 @@ def ridge_finder_multiple(
         method_used = c_label[i] if c_label[i] else f"model_{i}"
         key_name = f"r_rc_{method_used}"
         dist_rc_dict[key_name] = np.round(dist_rc, 3) if not np.isnan(dist_rc) else np.nan
-    
+
     return y_vals, x_intr_vals_list, y_intr_vals_list, dist_rc_dict
 
 
@@ -976,6 +979,9 @@ def model_run(*args):
     rmp = args[0][8]
     sw_params = args[0][9]
     model_type = args[0][-1]
+
+    # Re-initialize geopack inside the worker process to avoid 'a11' NameError
+    gp.recalc(sw_params["time"])
 
     y0 = int(j * dr) - y_max
     z0 = int(k * dr) - z_max
@@ -1159,7 +1165,9 @@ def get_sw_params(
     omni_t_p = spd.get_data(omni_vars[8])[1]
 
     # Convert omni_time to datetime objects from unix time
-    omni_time_datetime = [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in omni_time]
+    omni_time_datetime = [
+        datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in omni_time
+    ]
     # Get trange in datetime format
     omni_trange_time_object = [pd.to_datetime(trange[0]), pd.to_datetime(trange[1])]
     # Add utc as timezone to omni_trange_time_object
@@ -1212,7 +1220,9 @@ def get_sw_params(
         )
         mms_mec_time = spd.get_data(f"mms{mms_probe_num}_mec_r_gsm")[0]
         # Convert mms fgm time to datetime
-        mms_mec_time = np.array([datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_mec_time])
+        mms_mec_time = np.array(
+            [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_mec_time]
+        )
 
         # Position of MMS in GSM coordinates in earth radii (r_e) units
         r_e = 6378.137  # Earth radius in km
@@ -1232,7 +1242,9 @@ def get_sw_params(
         mms_fgm_b_gsm = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[1:4][0]
         mms_fgm_time = spd.get_data(f"mms{mms_probe_num}_fgm_b_gsm_srvy_l2_bvec")[0]
         # Convert mms fgm time to datetime
-        mms_fgm_time = np.array([datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_fgm_time])
+        mms_fgm_time = np.array(
+            [datetime.datetime.fromtimestamp(t, datetime.timezone.utc) for t in mms_fgm_time]
+        )
 
         try:
             data_rate = "fast"
@@ -1255,13 +1267,16 @@ def get_sw_params(
             )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
-            mms_fpi_time = np.array([datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time])
+            mms_fpi_time = np.array(
+                [datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time]
+            )
             mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
                 0
             ]
             if verbose:
-                vprint(2, 
-                    f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
+                vprint(
+                    2,
+                    f"\n \033[1;31m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n",
                 )
         except:
             # Get the data from the FPI
@@ -1285,13 +1300,16 @@ def get_sw_params(
             )
             mms_fpi_time = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[0]
             # Convert mms_fpi_time to datetime from unix time
-            mms_fpi_time = [datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time]
+            mms_fpi_time = [
+                datetime.datetime.fromtimestamp(x, datetime.timezone.utc) for x in mms_fpi_time
+            ]
             mms_fpi_bulkv_gsm = spd.get_data(f"mms{mms_probe_num}_dis_bulkv_gsm_{data_rate}")[1:4][
                 0
             ]
             if verbose:
-                vprint(2, 
-                    f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n"
+                vprint(
+                    2,
+                    f"\n \033[1;32m {data_rate} mode data found for MMS{mms_probe_num} \033[0m \n",
                 )
     else:
         mms_time = None
@@ -1363,7 +1381,8 @@ def get_sw_params(
 
     vprint(1, "IMF parameters found:", color="green")
     if verbose:
-        vprint(2, 
+        vprint(
+            2,
             tabulate(
                 [
                     ["Time of observation (UTC)", f"{time_imf_hrf}"],
@@ -1388,7 +1407,7 @@ def get_sw_params(
                 tablefmt="fancy_grid",
                 floatfmt=".2f",
                 numalign="center",
-            )
+            ),
         )
 
     # Check if the values are finite, if not then assign a default value to each of them
@@ -1620,11 +1639,6 @@ def rx_model(
     len_y = int((y_max - y_min) / dr) + 1
     len_z = int((z_max - z_min) / dr) + 1
 
-    if nprocesses is None:
-        p = mp.Pool()
-    else:
-        p = mp.Pool(processes=nprocesses)
-
     input = (
         (j, k, y_max, z_max, dr, m_p, ro, alpha, rmp, sw_params, model_type)
         for j in range(len_y)
@@ -1632,11 +1646,16 @@ def rx_model(
     )
 
     vprint(2, "Running the model \n")
-    res = p.map(model_run, input)
-    vprint(2, "Model run complete \n")
 
-    p.close()
-    p.join()
+    # Use context manager to prevent unclosed pool ResourceWarnings and Streamlit thread errors
+    if nprocesses is None:
+        with mp.Pool() as p:
+            res = p.map(model_run, input)
+    else:
+        with mp.Pool(processes=nprocesses) as p:
+            res = p.map(model_run, input)
+
+    vprint(2, "Model run complete \n")
 
     for r in res:
         j = r[0]
@@ -1687,9 +1706,10 @@ def rx_model(
             vprint(2, f"Date saved to file {fn} \n")
         except Exception as e:
             vprint(1, e, color="red")
-            vprint(2, 
+            vprint(
+                2,
                 f"Data not saved to file {fn}. Please make sure that file name is correctly"
-                + " assigned and that the directory exists and you have write permissions"
+                + " assigned and that the directory exists and you have write permissions",
             )
 
     return (
@@ -1765,7 +1785,7 @@ def line_fnc_der(x, y):
 
 def target_fnc(r, r0, b_msh, line_fnc, line_intrp):
     """
-    Objective function used to minimize the distance between the theoretical 
+    Objective function used to minimize the distance between the theoretical
     X-line curve and the interpolated magnetic surface.
 
     Parameters
@@ -1856,7 +1876,7 @@ def ridge_finder_multiple_interactive(
     **kwargs,
 ):
     """
-    Finds and extracts the continuous ridge (X-line) locations across multiple 
+    Finds and extracts the continuous ridge (X-line) locations across multiple
     reconnection models and prepares them for interactive Plotly 3D visualization.
 
     This function evaluates the specified reconnection models over a 2D spatial grid
